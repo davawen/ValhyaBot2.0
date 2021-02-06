@@ -4,7 +4,6 @@ dotenv.config();
 const config =
 {
 	TOKEN: process.env.TOKEN,
-	PREFIX: process.env.PREFIX,
 	TWITCH_ID: process.env.TWITCH_ID,
 	FAUNA_SECRET: process.env.FAUNA_SECRET,
 	FAUNA_KEY: process.env.FAUNA_KEY
@@ -42,25 +41,34 @@ client.on("message",
 		
 		//Split based on space
 		let splitedMessage = message.content.split(" ");
-		
+
 		//Rejoin when there are quotes
 		let parsedMessage = [];
 		let value = "";
 		for(let i = 0; i < splitedMessage.length; i++)
 		{
-			if(splitedMessage[i].startsWith("\"")) //If starts with quote, add to memory
+			let _str = splitedMessage[i];
+			
+			let _startWithQuote = _str.startsWith("\"");
+			let _endWithQuote = _str.endsWith("\"");
+			
+			if(_startWithQuote && _endWithQuote)
 			{
-				value += splitedMessage[i].slice(1) + " "; //Remove quote at start
+				parsedMessage.push(_str.slice(1, _str.length-1));
 			}
-			else if(splitedMessage[i].endsWith("\"")) //If ends with quote, add memory to splitedMessage
+			else if(_startWithQuote)
 			{
-				parsedMessage.push(value + splitedMessage[i].slice(0, splitedMessage[i].length-1)); //Remove quote at end
+				value += _str.slice(1) + " ";
+			}
+			else if(_endWithQuote)
+			{
+				parsedMessage.push(value + _str.slice(0, _str.length - 1)); //Remove quote at end
 				value = "";
 			}
-			else //In between or standalone word
+			else
 			{
-				if(value === "") parsedMessage.push(splitedMessage[i]);
-				else value += splitedMessage[i] + " ";
+				if(value === "") parsedMessage.push(_str);
+				else value += _str + " ";
 			}
 		}
 		
