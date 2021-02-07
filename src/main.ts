@@ -1,21 +1,24 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 
-const config =
+export const config =
 {
 	TOKEN: process.env.TOKEN,
 	TWITCH_ID: process.env.TWITCH_ID,
+	TWITCH_OAUTH: process.env.TWITCH_OAUTH,
+	TWITCH_SECRET: process.env.TWITCH_SECRET,
 	FAUNA_SECRET: process.env.FAUNA_SECRET,
-	FAUNA_KEY: process.env.FAUNA_KEY
+	FAUNA_KEY: process.env.FAUNA_KEY,
+	GOOGLE_ID: process.env.GOOGLE_ID
 };
 
-import { Client, ClientOptions, Message } from "discord.js";
+import { Client, ClientOptions, Message, Guild, VoiceConnection, StreamDispatcher, VoiceChannel } from "discord.js";
 
 //#region Interfaces/Classes
 
-type CommandArgument = "commands";
+export type CommandArgument = "commands" | "serverQueue";
 
-interface Command
+export interface Command
 {
 	run: (client: Client, message: Message, parsedMessage: string[], args?: any[]) => void,
 	name: string,
@@ -24,12 +27,80 @@ interface Command
 	args?: CommandArgument[];
 };
 
-export { Command };
+export class Song
+{
+	title: string;
+	url: string;
+	/** Length in seconds */
+	length: number;
+	thumbnail: string;
+	
+	constructor(title :string, url: string, length: number, thumbnail: string)
+	{
+		this.title = title;
+		this.url = url;
+		this.length = length;
+		this.thumbnail = thumbnail;
+	}
+}
+
+export type ServerQueue = Map<string, Queue>;
+
+export class Queue
+{
+	guild: Guild; //The server the guild is in
+	
+	voiceChannel: VoiceChannel;
+	connection: VoiceConnection;
+	dispatcher: StreamDispatcher;
+	
+	songs: Song[];
+	current: Song;
+	volume: number;
+	paused: boolean;
+	
+	constructor(guild: Guild)
+	{
+		this.guild = guild;
+		
+		this.voiceChannel = null;
+		this.connection = null;
+		
+		this.songs = [];
+		this.current = null;
+		this.volume = 1;
+		this.paused = false;
+	}
+	
+	disconnect(serverQueue: ServerQueue)
+	{
+		this.voiceChannel.leave();
+		this.connection = null;
+		
+		this.dispatcher.destroy();
+		
+		serverQueue.delete(this.guild.id);
+	}
+	
+	// pause()
+	// {
+	// 	if(!this.dispatcher) return;
+		
+	// 	if(!this.paused) this.dispatcher.pause();
+	// 	else this.dispatcher.resume();
+		
+	// 	this.paused = !this.paused;
+		
+	// 	console.log(this.dispatcher.paused);
+	// }
+}
 
 //#endregion
 
 import * as _c from "./commands";
 let commands = Object.values(_c);
+
+let serverQueue: ServerQueue = new Map();
 
 let client = new Client();
 
@@ -91,6 +162,9 @@ client.on("message",
 						{
 							case "commands":
 								additionalArgs.push(commands);
+								break;
+							case "serverQueue":
+								additionalArgs.push(serverQueue);
 								break;
 						} 
 					}

@@ -1,17 +1,7 @@
-import * as dotenv from "dotenv";
-dotenv.config();
-
 import * as https from "https";
+import { config } from './main';
 
-const config =
-{
-	TWITCH_ID: process.env.TWITCH_ID,
-	TWITCH_OAUTH: process.env.TWITCH_OAUTH,
-	FAUNA_SECRET: process.env.FAUNA_SECRET,
-	FAUNA_KEY: process.env.FAUNA_KEY
-};
-
-function request(options: https.RequestOptions): Promise<any>
+export function request(options: string | https.RequestOptions): Promise<any>
 {
 	return new Promise(
 		(resolve, reject) =>
@@ -37,13 +27,50 @@ function request(options: https.RequestOptions): Promise<any>
 	);
 }
 
-// let options: https.RequestOptions =
-// {
-// 	hostname: 'api.twitch.tv',
-// 	path: `/helix/users?login=Valhyan`,
-// 	headers:
-// 	{
-// 		'client-id': config.TWITCH_ID,
-// 		'Authorization': `Bearer ${config.TWITCH_OAUTH}`
-// 	}
-// }
+export interface YoutubeSearchResponse
+{
+	kind: string;
+	etag: string;
+	nextPageToken: string;
+	regionCode: string;
+	pageInfo:
+	{
+		totalResults: number;
+		resultsPerPage: number;
+	};
+	items:
+	{
+		kind: string;
+		etag: string;
+		id: {
+			kind: string;
+			videoId: string;
+		};
+		snippet: {
+			publishedAt: string;
+			channelId: string;
+			title: string;
+			description: string;
+			thumbnails: {
+				default: {
+					url: string;
+					width: number;
+					height: number;
+				};
+				medium: {
+					url: string;
+					width: number;
+					height: number;
+				};
+				high: {
+					url: string;
+					width: number;
+					height: number;
+				};
+			};
+			channelTitle: string;
+			liveBroadcastContent: string;
+			publishTime: string;
+		};
+	}[];
+}
