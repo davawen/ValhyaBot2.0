@@ -14,7 +14,7 @@ export const help: Command =
 		args[0].forEach(
 			c =>
 			{
-				embed.addField(`**${c.name}:**`, `${c.description}\nUtilisation: >v ${c.name} ${c.help}`, false);
+				embed.addField(`**${c.name}:**`, `${c.description}\nUtilisation: !t ${c.name} ${c.help}`, false);
 			}
 		);
 		
