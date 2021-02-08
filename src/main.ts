@@ -108,7 +108,7 @@ client.on("message",
 	(message) =>
 	{
 		if(message.author.bot) return;
-		if(!message.content.startsWith(">v")) return;
+		if(!message.content.startsWith("!t")) return;
 		
 		//Split based on space
 		let splitedMessage = message.content.split(" ");
