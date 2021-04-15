@@ -320,10 +320,12 @@ export const badApple: Command =
 		
 		await new Promise((resolve) => setTimeout(resolve, 5000));
 		
+		let currentFrame = await message.channel.send('Starting...');
+		
 		frames.forEach(
 			(frame) =>
 			{
-				message.channel.send(frame);
+				currentFrame.edit(frame);
 			}
 		);
 	},
