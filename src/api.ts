@@ -27,6 +27,11 @@ export function request(options: string | https.RequestOptions): Promise<any>
 	);
 }
 
+export async function sleep(time: number): Promise<boolean>
+{
+	return new Promise(resolve => setTimeout(resolve, time));
+}
+
 export interface YoutubeSearchResponse
 {
 	kind: string;

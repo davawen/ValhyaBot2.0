@@ -1,6 +1,6 @@
 import { Client, Message, MessageEmbed, VoiceChannel } from "discord.js"
 import { config, Command, Queue, Song, ServerQueue } from "./main"
-import { request, YoutubeSearchResponse } from './api'
+import { request, YoutubeSearchResponse, sleep } from './api'
 
 import * as fs from 'fs';
 
@@ -262,77 +262,6 @@ export const list: Command =
 	description: "Donne la liste des musiques qui vont jouer.",
 	help: "",
 	args: ["serverQueue"]
-}
-
-//#endregion
-
-//#region Bad apple!!
-
-export const badApple: Command = 
-{
-	run: async (client, message, parsedMessage: string[]) =>
-	{
-		let frames: string[] = [];
-		
-		let amount = parseInt(parsedMessage[0]);
-		
-		let percent = await message.channel.send("0 %");
-		
-		console.log("Start for loop");
-		
-		for(let i = 0; i < amount; i++)
-		{
-			let pixels = fs.readFileSync(__dirname + `/assets/FramesCompressed/out-${i+1}.txt`, "ascii");
-			
-			let mes = "\`";
-			
-			let l = pixels.length;
-			
-			for(let j = 0; j <= l; j++)
-			{
-				mes += pixels[j] === "0" ? "⬛" : (pixels[j] === "1" ? "⬜" : "🔳");
-				
-				if(j % 51 == 50) mes += "\n";
-				
-				// let pixels = line.split("_");
-				
-				// let value = pixels[0] === "0" ? "⬛" : (pixels[0] === "1" ? "⬜" : "🔳");
-				// let amount = parseInt(pixels[1]);
-				
-				// for(let i = 0; i < amount; i++)
-				// {
-				// 	mes += value;
-					
-				// 	if(index % 51 == 50) mes += "\n";
-					
-				// 	index++;
-				// }				
-			}
-			
-			await percent.edit(`${i/amount*100} %`);
-			
-			frames.push(mes + "\`");
-		}
-
-		console.log("End for loop");
-		
-		await percent.edit("100 %\nReady !\nStarting in 5 seconds...");
-		
-		await new Promise((resolve) => setTimeout(resolve, 5000));
-		
-		let currentFrame = await message.channel.send('Starting...');
-		
-		frames.forEach(
-			(frame) =>
-			{
-				currentFrame.edit(frame);
-			}
-		);
-	},
-	name: "badApple",
-	description: "Envoit bad apple",
-	help: "<nombre d'images>",
-	args: []
 }
 
 //#endregion
