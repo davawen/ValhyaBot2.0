@@ -14,8 +14,6 @@ export const recieveWebhooks = () =>
 	app.get('/twitch',
 		(req, res) =>
 		{
-			console.log(req.query);
-			
 			if(req.query['hub.challenge'])
 			{
 				res.type('text/plain');
@@ -30,7 +28,7 @@ export const recieveWebhooks = () =>
 		{
 			try
 			{
-				res.status(200).send('Sucess ! :)');
+				res.status(200).send(200);
 				
 				let data: TwitchStreamWebhook[] = req.body.data;
 				

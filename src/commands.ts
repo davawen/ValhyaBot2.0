@@ -396,7 +396,8 @@ export const deleteStreamer = new Command(
 				{
 					if(streamers.has(streamerName))
 					{
-						const channels = streamers.get(streamerName).channels;
+						const streamer = streamers.get(streamerName);
+						const channels = streamer.channels;
 
 						channels.forEach(
 							(channel) =>
@@ -408,6 +409,29 @@ export const deleteStreamer = new Command(
 								}
 							}
 						);
+						
+						if(channels.size == 0) //If streamer is no longer subscribed anywhere, unsubscribe from webhook
+						{
+							request(
+								{
+									hostname: "api.twitch.tv",
+									path: encodeURI(
+										'/helix/webhooks/hub' +
+										'?hub.callback=https://valhyabot-2.herokuapp.com/twitch' +
+										'&hub.mode=unsubscribe' +
+										`&hub.topic=https://api.twitch.tv/helix/streams?user_id=${streamer.id}` +
+										'&hub.lease_seconds=864000'
+									),
+									headers:
+									{
+										"client-id": config.TWITCH_ID,
+										Authorization: `Bearer ${config.TWITCH_OAUTH}`,
+										'Content-Type': 'application/x-www-form-urlencoded'
+									},
+									method: "POST"
+								}
+							);
+						}
 					}
 				}
 			);
