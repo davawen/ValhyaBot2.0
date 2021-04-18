@@ -11,6 +11,10 @@ export const recieveWebhooks = () =>
 	app.get('/twitch',
 		(req, res) =>
 		{
+			console.log(req);
+			
+			console.log(res);
+			
 			try
 			{
 				if(req.body.length <= 0) return; //Stream offline
