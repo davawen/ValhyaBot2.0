@@ -337,6 +337,8 @@ export const addStreamer = new Command(
 				}
 			);
 			
+			console.log(query);
+			
 			if(query.data.length == 0) return message.channel.send(`${parsedMessage[0]} n'existe pas !`)
 			
 			let streamer = query.data[0];
