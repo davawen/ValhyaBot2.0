@@ -358,7 +358,7 @@ export const addStreamer = new Command(
 				streamers.get(streamer.login).channels.add(message.channel as TextChannel);
 			}
 			
-			let postResponse = await request(
+			request(
 				{
 					hostname: "api.twitch.tv",
 					path: encodeURI(
@@ -377,8 +377,6 @@ export const addStreamer = new Command(
 					method: "POST"
 				}
 			);
-			
-			console.log(postResponse);
 			
 			message.channel.send(`Le streamer ${streamer.display_name} à été ajouté à la liste`);
 		},

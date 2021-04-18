@@ -19,7 +19,8 @@ export const recieveWebhooks = () =>
 			if(req.query['hub.challenge'])
 			{
 				res.type('text/plain');
-				res.status(200).send(req.query['hub.challenge']);
+				res.write(req.query['hub.challenge']);
+				res.status(200).send();
 			}
 		}
 	)
@@ -28,6 +29,7 @@ export const recieveWebhooks = () =>
 		(req, res) =>
 		{
 			console.log(req.body);
+			console.log(req.query);
 			
 			try
 			{
