@@ -15,8 +15,10 @@ export const config =
 import { Client } from "discord.js";
 import * as faunadb from 'faunadb';
 
+import { recieveWebhooks } from './web';
+
 import { ServerQueue } from './include/song';
-import { Streamer, pingStreamers } from './include/streamer';
+import { Streamer/*, pingStreamers*/ } from './include/streamer';
 
 
 //Setup global values needed bt commands
@@ -102,7 +104,8 @@ client.on("ready",
 	{
 		console.log(`Logged in as ${client.user.username}!`);
 		
-		pingStreamers(client, streamers);
+		//pingStreamers(client, streamers);
+		recieveWebhooks();
 	}
 );
 

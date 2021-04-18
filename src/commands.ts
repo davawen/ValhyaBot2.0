@@ -7,7 +7,7 @@ import { ServerQueue, Queue, Song } from './include/song';
 import { Streamer } from "./include/streamer";
 
 import { config, commands, faunaClient, serverQueue, streamers } from "./main";
-import { request, YoutubeSearchResponse, sleep, YoutubePlaylistItemListResponse, TwitchChannelResponse, TwitchUserResponse } from './api'
+import { request, YoutubeSearchResponse, sleep, YoutubePlaylistItemListResponse, TwitchChannelResponse, TwitchUserResponse, postRequest } from './api'
 import { start } from "repl";
 
 //#region General
@@ -358,7 +358,29 @@ export const addStreamer = new Command(
 				streamers.get(streamer.login).channels.add(message.channel as TextChannel);
 			}
 			
-			message.channel.send(`Ajouté streamer ${streamer.display_name} à la liste`);
+			let postResponse = await request(
+				{
+					hostname: "api.twitch.tv",
+					path: encodeURI(
+						'/helix/webhooks/hub' +
+						'?hub.callback=https://valhyabot-2.herokuapp.com/twitch' +
+						'&hub.mode=subscribe' + 
+						`&hub.topic=https://api.twitch.tv/helix/streams?user_id=${streamer.id}` + 
+						'&hub.lease_seconds=864000'
+					),
+					headers:
+					{
+						"client-id": config.TWITCH_ID,
+						Authorization: `Bearer ${config.TWITCH_OAUTH}`,
+						'Content-Type': 'application/x-www-form-urlencoded'
+					},
+					method: "POST"
+				}
+			);
+			
+			console.log(postResponse);
+			
+			message.channel.send(`Le streamer ${streamer.display_name} à été ajouté à la liste`);
 		},
 		name: "addStreamer",
 		description: "Ajoute un streamer à la liste de vérification",

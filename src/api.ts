@@ -1,5 +1,6 @@
 import * as https from "https";
 import { config } from './main';
+import * as  querystring from 'querystring';
 
 export function request<T>(options: string | https.RequestOptions): Promise<T>
 {
@@ -11,18 +12,50 @@ export function request<T>(options: string | https.RequestOptions): Promise<T>
 				{
 					res.setEncoding("utf-8");
 					
-					let rawData = "";
+					let rawData: any = "";
 					res.on('data', chunk => rawData += chunk);
 					res.on('end',
 						() =>
 						{
-							resolve(JSON.parse(rawData));
+							if(/{/.test(rawData)) resolve(JSON.parse(rawData));
+							else resolve(rawData);
 						}
 					);
 					
 					res.on('error', reject);
 				}
 			).on('error', reject);
+		}
+	);
+}
+
+/**
+ * @returns Response to the post request
+*/
+export function postRequest(options: https.RequestOptions, content: any): Promise<string>
+{
+	const postData = querystring.stringify(content);
+	
+	options.method = "POST";
+	
+	options.headers['Content-Length'] = Buffer.byteLength(postData);
+	
+	return new Promise(
+		(resolve, reject) =>
+		{
+			const req = https.request(options,
+				res =>
+				{
+					res.setEncoding("utf-8");
+
+					let rawData = "";
+					res.on('data', chunk => rawData += chunk);
+					res.on('end', () => resolve(rawData));
+				}
+			);
+			
+			req.write(postData);
+			req.end();
 		}
 	);
 }
@@ -142,5 +175,22 @@ interface TwitchUserData {
 	email:             string;
 	created_at:        string;
 }
+
+export interface TwitchStreamWebhook {
+	id:            string;
+	user_id:       string;
+	user_login:    string;
+	user_name:     string;
+	game_id:       string;
+	game_name:     string;
+	type:          string;
+	title:         string;
+	viewer_count:  number;
+	started_at:    string;
+	language:      string;
+	thumbnail_url: string;
+	tag_ids:       any[];
+}
+
 
 //#endregion

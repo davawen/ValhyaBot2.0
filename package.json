@@ -2,7 +2,7 @@
   "name": "valhyabot2.0",
   "version": "1.0.0",
   "description": "Second and hopefully working version of Valhyabot.",
-  "main": "./dist/bot/main.js",
+  "main": "./dist/main.js",
   "scripts": {
     "postinstall": "tsc && mv src/assets dist/ && rm -v -rf src"
   },
