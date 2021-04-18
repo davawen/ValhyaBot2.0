@@ -12,97 +12,23 @@ export const config =
 	GOOGLE_ID: process.env.GOOGLE_ID
 };
 
-import { Client, ClientOptions, Message, Guild, VoiceConnection, StreamDispatcher, VoiceChannel } from "discord.js";
+import { Client } from "discord.js";
+import * as faunadb from 'faunadb';
 
-//#region Interfaces/Classes
+import { ServerQueue } from './include/song';
+import { Streamer, pingStreamers } from './include/streamer';
 
-export type CommandArgument = "commands" | "serverQueue";
 
-export interface Command
-{
-	run: (client: Client, message: Message, parsedMessage: string[], args?: any[]) => void,
-	name: string,
-	description: string,
-	help: string,
-	args?: CommandArgument[];
-};
+//Setup global values needed bt commands
+export const serverQueue: ServerQueue = new Map();
+export const streamers: Map<string, Streamer> = new Map();
+export const faunaClient = new faunadb.Client({ secret: config.FAUNA_SECRET });
 
-export class Song
-{
-	title: string;
-	url: string;
-	/** Length in seconds */
-	length: number;
-	thumbnail: string;
-	
-	constructor(title :string, url: string, length: number, thumbnail: string)
-	{
-		this.title = title;
-		this.url = url;
-		this.length = length;
-		this.thumbnail = thumbnail;
-	}
-}
+import * as __c from "./commands";
+export const commands = Object.values(__c); //Transform command object into array
 
-export type ServerQueue = Map<string, Queue>;
-
-export class Queue
-{
-	guild: Guild; //The server the guild is in
-	
-	voiceChannel: VoiceChannel;
-	connection: VoiceConnection;
-	dispatcher: StreamDispatcher;
-	
-	songs: Song[];
-	current: Song;
-	volume: number;
-	paused: boolean;
-	
-	constructor(guild: Guild)
-	{
-		this.guild = guild;
-		
-		this.voiceChannel = null;
-		this.connection = null;
-		
-		this.songs = [];
-		this.current = null;
-		this.volume = 1;
-		this.paused = false;
-	}
-	
-	disconnect(serverQueue: ServerQueue)
-	{
-		this.voiceChannel.leave();
-		this.connection = null;
-		
-		this.dispatcher.destroy();
-		
-		serverQueue.delete(this.guild.id);
-	}
-	
-	// pause()
-	// {
-	// 	if(!this.dispatcher) return;
-		
-	// 	if(!this.paused) this.dispatcher.pause();
-	// 	else this.dispatcher.resume();
-		
-	// 	this.paused = !this.paused;
-		
-	// 	console.log(this.dispatcher.paused);
-	// }
-}
-
-//#endregion
-
-import * as _c from "./commands";
-let commands = Object.values(_c);
-
-let serverQueue: ServerQueue = new Map();
-
-let client = new Client();
+//#region Discord based events
+const client = new Client();
 
 client.on("message",
 	(message) =>
@@ -114,7 +40,7 @@ client.on("message",
 		let splitedMessage = message.content.split(" ");
 
 		//Rejoin when there are quotes
-		let parsedMessage = [];
+		const parsedMessage = [];
 		let value = "";
 		for(let i = 0; i < splitedMessage.length; i++)
 		{
@@ -145,33 +71,28 @@ client.on("message",
 		
 		parsedMessage.shift();
 		
-		let _cName = parsedMessage.shift();
+		const commandName = parsedMessage.shift();
 		
-		let command = commands.find(c => c.name === _cName );
+		const command = commands.find(c => c.name === commandName );
 		
-		if(command != undefined)
+		if(command == undefined) return;
+		
+		try
 		{
-			if(!command.args) command.run(client, message, parsedMessage);
-			else
+			if(command.admin)
 			{
-				let additionalArgs = [];
-				command.args.forEach(
-					a =>
-					{
-						switch(a)
-						{
-							case "commands":
-								additionalArgs.push(commands);
-								break;
-							case "serverQueue":
-								additionalArgs.push(serverQueue);
-								break;
-						} 
-					}
-				);
-				
-				command.run(client, message, parsedMessage, additionalArgs);
+				if(!message.member.permissions.has('ADMINISTRATOR'))
+				{
+					return message.channel.send("Vous devez avoir les permissions administrateurs pour utiliser cette commande !");
+				}
 			}
+			
+			command.run(client, message, parsedMessage);
+		}
+		catch(err)
+		{
+			message.channel.send(`Une erreur à été rencontrée avec la commande: ${err}`);
+			console.log(`Error encountered while running command ${command.name},\nat ${new Date()},\nsent by ${message.author.username},\nwith arguments ${parsedMessage},\nError message : ${err}`);
 		}
 	}
 );
@@ -180,7 +101,11 @@ client.on("ready",
 	() => 
 	{
 		console.log(`Logged in as ${client.user.username}!`);
+		
+		pingStreamers(client, streamers);
 	}
 );
 
 client.login(config.TOKEN).catch(console.log);
+
+//#endregion
