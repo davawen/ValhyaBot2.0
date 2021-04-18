@@ -12,19 +12,22 @@ export const config =
 	GOOGLE_ID: process.env.GOOGLE_ID
 };
 
-import { Client } from "discord.js";
-import * as faunadb from 'faunadb';
+import { Client, TextChannel } from "discord.js";
+import { Client as FaunadbClient, query as q, Documents, Collection} from 'faunadb';
 
 import { recieveWebhooks } from './web';
+import { FaunaStreamerCollectionResponse } from "./api";
 
 import { ServerQueue } from './include/song';
-import { Streamer/*, pingStreamers*/ } from './include/streamer';
+import { Streamer } from './include/streamer';
 
 
 //Setup global values needed bt commands
+export const faunaClient = new FaunadbClient({ secret: config.FAUNA_SECRET });
+
 export const serverQueue: ServerQueue = new Map();
+
 export const streamers: Map<string, Streamer> = new Map();
-export const faunaClient = new faunadb.Client({ secret: config.FAUNA_SECRET });
 
 import * as __c from "./commands";
 export const commands = Object.values(__c); //Transform command object into array
@@ -94,16 +97,45 @@ client.on("message",
 		catch(err)
 		{
 			message.channel.send(`Une erreur à été rencontrée avec la commande: ${err}`);
-			console.log(`Error encountered while running command ${command.name},\nat ${new Date()},\nsent by ${message.author.username},\nwith arguments ${parsedMessage},\nError message : ${err}`);
+			console.log(`Error encountered while running command ${command.name},\nat ${new Date()},\nsent by ${message.author.username}, with arguments ${parsedMessage},\nError message : ${err}`);
 		}
 	}
 );
 
 client.on("ready",
-	() => 
+	async () => 
 	{
 		console.log(`Logged in as ${client.user.username}!`);
 		
+		//Get already present streamers from database
+		const faunaStreamers: FaunaStreamerCollectionResponse = await faunaClient.query(
+			q.Map(
+				q.Paginate(Documents(Collection('streamers'))),
+				q.Lambda(x => q.Get(x))
+			)
+		);
+		
+		faunaStreamers.data.forEach(
+			faunaStreamer =>
+			{
+				let channels: TextChannel[] = [];
+				
+				faunaStreamer.data.channels.forEach(channelID => channels.push(client.channels.cache.get(channelID) as TextChannel));
+				
+				streamers.set(faunaStreamer.data.name,
+					new Streamer(
+						{
+							name: faunaStreamer.data.name,
+							displayName: faunaStreamer.data.displayName,
+							channels: channels,
+							id: faunaStreamer.data.id
+						}
+					)
+				);
+			}
+		);
+		
+		//Check for webhooks
 		recieveWebhooks();
 	}
 );

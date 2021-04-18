@@ -56,7 +56,7 @@ export const recieveWebhooks = () =>
 	app.listen(port, 
 		() =>
 		{
-			console.log(`Listening on localhost:${port}`);
+			console.log(`Listening on port ${port} !\n`);
 		}	
 	);
 }

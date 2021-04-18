@@ -1,14 +1,14 @@
 import { Client, Message, MessageEmbed, TextChannel, VoiceChannel } from "discord.js";
 import * as ytdl from 'ytdl-core';
-import * as faunadb from 'faunadb';
+
+import {query as q, Collection} from 'faunadb';
 
 import { Command } from './include/command';
 import { ServerQueue, Queue, Song } from './include/song';
 import { Streamer } from "./include/streamer";
 
 import { config, commands, faunaClient, serverQueue, streamers } from "./main";
-import { request, YoutubeSearchResponse, sleep, YoutubePlaylistItemListResponse, TwitchChannelResponse, TwitchUserResponse, postRequest } from './api'
-import { start } from "repl";
+import { request, YoutubeSearchResponse, sleep, YoutubePlaylistItemListResponse, TwitchUserResponse, FaunaStreamerDocument } from './api'
 
 //#region General
 export const help = new Command(
@@ -325,6 +325,8 @@ export const addStreamer = new Command(
 	{
 		run: async (client, message, parsedMessage) =>
 		{
+			if(message.channel == undefined) return; //¯\_(ツ)_/¯ Something to do with recently created channels
+			
 			const query = await request<TwitchUserResponse>(
 				{
 					hostname: "api.twitch.tv",
@@ -345,38 +347,70 @@ export const addStreamer = new Command(
 			{
 				streamers.set(streamer.login, new Streamer(
 					{
-						channel: message.channel as TextChannel,
+						channels: message.channel as TextChannel,
 						id: streamer.id,
 						name: streamer.login,
 						displayName: streamer.display_name
 					}
 				));
+				
+				//Subscribe to twitch API
+				request(
+					{
+						hostname: "api.twitch.tv",
+						path: encodeURI(
+							'/helix/webhooks/hub' +
+							'?hub.callback=https://valhyabot-2.herokuapp.com/twitch' +
+							'&hub.mode=subscribe' +
+							`&hub.topic=https://api.twitch.tv/helix/streams?user_id=${streamer.id}` +
+							'&hub.lease_seconds=864000'
+						),
+						headers:
+						{
+							"client-id": config.TWITCH_ID,
+							Authorization: `Bearer ${config.TWITCH_OAUTH}`,
+							'Content-Type': 'application/x-www-form-urlencoded'
+						},
+						method: "POST"
+					}
+				);
+				
+				//Create FaunaDB document
+				faunaClient.query(
+					q.Create(
+						Collection('streamers'),
+						{
+							data: 
+							{
+								channels: [message.channel.id],
+								id: streamer.id,
+								name: streamer.login,
+								displayName: streamer.display_name
+							}
+						}
+					)
+				);
 			}
 			else
 			{
-				//Append this channel to the set
+				//Append new channel to the set
 				streamers.get(streamer.login).channels.add(message.channel as TextChannel);
+				
+				//Append new channel to FaunaDB document
+				const oldDocument: FaunaStreamerDocument = await faunaClient.query(q.Get(q.Match(q.Index('streamersById'), streamer.id)));
+				
+				faunaClient.query(
+					q.Update(
+						q.Select('ref', oldDocument),
+						{
+							data:
+							{
+								channels: [...oldDocument.data.channels, streamer.id]
+							}
+						}
+					)
+				);
 			}
-			
-			request(
-				{
-					hostname: "api.twitch.tv",
-					path: encodeURI(
-						'/helix/webhooks/hub' +
-						'?hub.callback=https://valhyabot-2.herokuapp.com/twitch' +
-						'&hub.mode=subscribe' + 
-						`&hub.topic=https://api.twitch.tv/helix/streams?user_id=${streamer.id}` + 
-						'&hub.lease_seconds=864000'
-					),
-					headers:
-					{
-						"client-id": config.TWITCH_ID,
-						Authorization: `Bearer ${config.TWITCH_OAUTH}`,
-						'Content-Type': 'application/x-www-form-urlencoded'
-					},
-					method: "POST"
-				}
-			);
 			
 			message.channel.send(`Le streamer ${streamer.display_name} à été ajouté à la liste`);
 		},
@@ -392,25 +426,42 @@ export const deleteStreamer = new Command(
 		run: (client, message, parsedMessage) =>
 		{
 			parsedMessage.forEach(
-				streamerName =>
+				async streamerName =>
 				{
 					if(streamers.has(streamerName))
 					{
 						const streamer = streamers.get(streamerName);
 						const channels = streamer.channels;
-
-						channels.forEach(
-							(channel) =>
+						
+						//Have to use this to avoid skipping channels and to make only one call to faunadb
+						const channelsToRemove = Array.from(channels).filter(channel => channel.guild.id === message.guild.id);
+						
+						const oldDocument: FaunaStreamerDocument = await faunaClient.query(q.Get(q.Match(q.Index('streamersById'), streamer.id)));
+						
+						channelsToRemove.forEach(
+							channelToRemove =>
 							{
-								if(channel.guild.id === message.guild.id)
-								{
-									channels.delete(channel);
-									message.channel.send(`Supprimé ${streamerName} du salon ${channel.name} !`);
-								}
+								channels.delete(channelToRemove);
+								
+								oldDocument.data.channels.splice(oldDocument.data.channels.indexOf(channelToRemove.id), 1);
+								
+								message.channel.send(`Supprimé ${streamerName} du salon ${channelToRemove.name} !`);
 							}
 						);
 						
-						if(channels.size == 0) //If streamer is no longer subscribed anywhere, unsubscribe from webhook
+						faunaClient.query(
+							q.Update(
+								q.Select('ref', oldDocument),
+								{
+									data:
+									{
+										channels: oldDocument.data.channels
+									}
+								}
+							)
+						);
+						
+						if(channels.size == 0) //If streamer is no longer subscribed anywhere, unsubscribe from webhook and remove document
 						{
 							request(
 								{
@@ -430,6 +481,10 @@ export const deleteStreamer = new Command(
 									},
 									method: "POST"
 								}
+							);
+							
+							faunaClient.query(
+								q.Delete( q.Select('ref', oldDocument) )
 							);
 						}
 					}
@@ -453,14 +508,25 @@ export const listStreamer = new Command(
 				(streamer) =>
 				{
 					//Find if a channel in this server has the streamer
-					const channel = Array.from(streamer.channels.values()).find((channel) => channel.guild.id === message.guild.id);
+					console.log(streamer)
 					
-					if(channel != undefined)
+					const channels = Array.from(streamer.channels.values()).filter((channel) => channel.guild.id === message.guild.id);
+					
+					if(channels.length > 0)
 					{
-						embed.addField(streamer.name, channel.name, true);
+						let string = "";
+						
+						channels.forEach(c => string += `**# ${c.name}**, `);
+						
+						embed.addField(streamer.name, string.slice(0, string.length - 2), true);
 					}
 				}
 			);
+			
+			if(embed.fields.length == 0)
+			{
+				return message.channel.send(`Aucun streamer n'est vérifié dans ce serveur!`);
+			}
 			
 			message.channel.send(embed);
 		},

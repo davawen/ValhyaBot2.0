@@ -8,7 +8,7 @@ interface StreamerConstructorOptions
 	name: string;
 	displayName: string;
 	id: string;
-	channel: TextChannel;
+	channels: TextChannel | TextChannel[];
 }
 
 export class Streamer
@@ -24,7 +24,15 @@ export class Streamer
 		this._name = options.name;
 		this._displayName = options.displayName;
 		this._id = options.id;
-		this.channels = new Set([options.channel]);
+		
+		if(Array.isArray(options.channels))
+		{
+			this.channels = new Set(options.channels);
+		}
+		else
+		{
+			this.channels = new Set([options.channels]);
+		}
 	}
 	
 	get name() { return this._name; };
