@@ -211,7 +211,7 @@ export const p = new Command(
 			
 		},
 		name: "p",
-		description: "Ajoute une vidéo à la liste de lecture à travers une url de vidéo ou de playlist, ou une recherche.",
+		description: "Ajoute une vidéo à la liste de lecture à travers une url de vidéo ou de playlist, ou une recherche",
 		help: ["<Url>", "<Url de playlist> <Nombre d'éléments voulus>", "<Recherche>"]
 	}
 );
@@ -226,7 +226,7 @@ export const stop = new Command(
 			else message.channel.send("Je ne suis pas dans un salon vocal !");
 		},
 		name: "stop",
-		description: "Déconnecte le bot du salon vocal."
+		description: "Déconnecte le bot du salon vocal et supprime la liste de lecture"
 	}
 );
 
@@ -415,7 +415,7 @@ export const addStreamer = new Command(
 			message.channel.send(`Le streamer ${streamer.display_name} à été ajouté à la liste`);
 		},
 		name: "addStreamer",
-		description: "Ajoute un streamer à la liste de vérification",
+		description: "Ajoute un streamer à la liste de vérification dans ce salon",
 		admin: true,
 		help: ["<Nom du streamer>"]
 	}
@@ -492,7 +492,7 @@ export const deleteStreamer = new Command(
 			);
 		},
 		name: "deleteStreamer",
-		description: "Supprime le ou les streamers de la liste de vérification dans ce serveur",
+		description: "Supprime le ou les streamers dans la liste de vérification de ce serveur",
 		admin: true,
 		help: ["<Nom1> <Nom2> <...>"]
 	}
@@ -531,7 +531,7 @@ export const listStreamer = new Command(
 			message.channel.send(embed);
 		},
 		name: "listStreamer",
-		description: "Liste tous les streamers dans la liste de vérification"
+		description: "Liste tous les streamers dans la liste de vérification de ce serveur"
 	}
 );
 
