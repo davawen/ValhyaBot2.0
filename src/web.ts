@@ -28,16 +28,15 @@ export const recieveWebhooks = () =>
 	app.post('/twitch',
 		(req, res) =>
 		{
-			console.log(req.body);
-			console.log(req.query);
-			
 			try
 			{
 				res.status(200).send('Sucess ! :)');
 				
-				if(req.body.length <= 0) return; //Stream offline
+				let data: TwitchStreamWebhook[] = req.body.data;
 				
-				let stream: TwitchStreamWebhook = req.body[0];
+				if(data.length <= 0) return; //Stream offline
+				
+				let stream: TwitchStreamWebhook = data[0];
 				let streamer = streamers.get(stream.user_login);
 				
 				//console.log(stream);
