@@ -14,12 +14,12 @@ export const recieveWebhooks = () =>
 	app.get('/twitch',
 		(req, res) =>
 		{
-			console.log(req.body);
+			console.log(req.query);
 			
-			if(req.body['hub.challenge'])
+			if(req.query['hub.challenge'])
 			{
 				res.type('text/plain');
-				res.status(200).send(req.body['hub.challenge']);
+				res.status(200).send(req.query['hub.challenge']);
 			}
 		}
 	)
