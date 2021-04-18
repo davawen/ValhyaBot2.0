@@ -147,6 +147,8 @@ export const p = new Command(
 				
 				let video = await request<YoutubeSearchResponse>(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q=${encodeURIComponent(videoUrl)}&key=${config.GOOGLE_ID}`);
 				
+				if(video.items.length == 0) return message.channel.send(`Je n'ai pas pu trouver une vidéo avec ce titre !`);
+				
 				urls[0] = video.items[0].id.videoId;
 			}
 			else if(/(&list=)/.test(videoUrl)) //Check if the url is a playlist
