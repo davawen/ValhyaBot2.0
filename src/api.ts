@@ -227,6 +227,7 @@ export interface FaunaStreamer
 	id: string;
 	/**Array of channel ids */
 	channels: string[];
+	date: number;
 }
 
 //#endregion

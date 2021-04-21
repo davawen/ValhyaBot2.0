@@ -12,6 +12,8 @@ export const config =
 	GOOGLE_ID: process.env.GOOGLE_ID
 };
 
+
+
 import { Client, TextChannel } from "discord.js";
 import { Client as FaunadbClient, query as q, Documents, Collection} from 'faunadb';
 
@@ -24,6 +26,7 @@ import { Streamer } from './include/streamer';
 
 //Setup global values needed bt commands
 export const faunaClient = new FaunadbClient({ secret: config.FAUNA_SECRET });
+
 
 export const serverQueue: ServerQueue = new Map();
 
@@ -122,16 +125,19 @@ client.on("ready",
 				
 				faunaStreamer.data.channels.forEach(channelID => channels.push(client.channels.cache.get(channelID) as TextChannel));
 				
-				streamers.set(faunaStreamer.data.name,
-					new Streamer(
-						{
-							name: faunaStreamer.data.name,
-							displayName: faunaStreamer.data.displayName,
-							channels: channels,
-							id: faunaStreamer.data.id
-						}
-					)
+				let newStreamer = new Streamer(
+					{
+						name: faunaStreamer.data.name,
+						displayName: faunaStreamer.data.displayName,
+						channels: channels,
+						id: faunaStreamer.data.id,
+						date: faunaStreamer.data.date
+					}
 				);
+				
+				streamers.set(faunaStreamer.data.name, newStreamer);
+				
+				newStreamer.renewSubscription();
 			}
 		);
 		

@@ -347,35 +347,19 @@ export const addStreamer = new Command(
 			
 			if(!streamers.has(streamer.login))
 			{
-				streamers.set(streamer.login, new Streamer(
+				let newStreamer = new Streamer(
 					{
 						channels: message.channel as TextChannel,
 						id: streamer.id,
 						name: streamer.login,
 						displayName: streamer.display_name
 					}
-				));
+				);
+				
+				streamers.set(streamer.login, newStreamer);
 				
 				//Subscribe to twitch API
-				request(
-					{
-						hostname: "api.twitch.tv",
-						path: encodeURI(
-							'/helix/webhooks/hub' +
-							'?hub.callback=https://valhyabot-2.herokuapp.com/twitch' +
-							'&hub.mode=subscribe' +
-							`&hub.topic=https://api.twitch.tv/helix/streams?user_id=${streamer.id}` +
-							'&hub.lease_seconds=864000'
-						),
-						headers:
-						{
-							"client-id": config.TWITCH_ID,
-							Authorization: `Bearer ${config.TWITCH_OAUTH}`,
-							'Content-Type': 'application/x-www-form-urlencoded'
-						},
-						method: "POST"
-					}
-				);
+				newStreamer.subscribe(true);
 				
 				//Create FaunaDB document
 				faunaClient.query(
@@ -387,7 +371,8 @@ export const addStreamer = new Command(
 								channels: [message.channel.id],
 								id: streamer.id,
 								name: streamer.login,
-								displayName: streamer.display_name
+								displayName: streamer.display_name,
+								date: newStreamer.date
 							}
 						}
 					)
@@ -451,42 +436,27 @@ export const deleteStreamer = new Command(
 							}
 						);
 						
-						faunaClient.query(
-							q.Update(
-								q.Select('ref', oldDocument),
-								{
-									data:
-									{
-										channels: oldDocument.data.channels
-									}
-								}
-							)
-						);
-						
-						if(channels.size == 0) //If streamer is no longer subscribed anywhere, unsubscribe from webhook and remove document
+
+						if(channels.size == 0) //If streamer is no longer anywhere, unsubscribe from webhook and remove document
 						{
-							request(
-								{
-									hostname: "api.twitch.tv",
-									path: encodeURI(
-										'/helix/webhooks/hub' +
-										'?hub.callback=https://valhyabot-2.herokuapp.com/twitch' +
-										'&hub.mode=unsubscribe' +
-										`&hub.topic=https://api.twitch.tv/helix/streams?user_id=${streamer.id}` +
-										'&hub.lease_seconds=864000'
-									),
-									headers:
-									{
-										"client-id": config.TWITCH_ID,
-										Authorization: `Bearer ${config.TWITCH_OAUTH}`,
-										'Content-Type': 'application/x-www-form-urlencoded'
-									},
-									method: "POST"
-								}
-							);
-							
+							streamer.subscribe(false);
+
 							faunaClient.query(
-								q.Delete( q.Select('ref', oldDocument) )
+								q.Delete(q.Select('ref', oldDocument))
+							);
+						}
+						else //Else, update fauna doccument
+						{
+							faunaClient.query(
+								q.Update(
+									q.Select('ref', oldDocument),
+									{
+										data:
+										{
+											channels: oldDocument.data.channels
+										}
+									}
+								)
 							);
 						}
 					}
