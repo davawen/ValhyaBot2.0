@@ -134,8 +134,11 @@ export const p = new Command(
 			const permissions = message.member.voice.channel.permissionsFor(client.user);
 			if(!permissions.has('CONNECT') || !permissions.has('SPEAK')) return message.channel.send("Je ne peux pas rejoindre ou parler dans le salon vocal !");
 		
-			
-			message.suppressEmbeds(); //Remove youtube embeds there might be
+			try
+			{
+				message.suppressEmbeds(); //Remove youtube embeds there might be
+			}
+			catch(e){} //In case bot doesn't have required parmissions
 			
 			let videoUrl = parsedMessage[0];
 			

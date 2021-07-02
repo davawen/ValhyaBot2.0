@@ -24,6 +24,7 @@ import { ServerQueue } from './include/song';
 import { Streamer } from './include/streamer';
 
 
+
 //Setup global values needed bt commands
 export const faunaClient = new FaunadbClient({ secret: config.FAUNA_SECRET });
 
