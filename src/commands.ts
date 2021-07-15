@@ -90,29 +90,10 @@ export const commands: Command[] =
 	
 	new Command(
 		{
-<<<<<<< HEAD
-			if(!message.member.voice.channel) return message.channel.send("Vous devez être dans un salon vocal pour cette commande !");
-			
-			const permissions = message.member.voice.channel.permissionsFor(client.user);
-			if(!permissions.has('CONNECT') || !permissions.has('SPEAK')) return message.channel.send("Je ne peux pas rejoindre ou parler dans le salon vocal !");
-		
-			try
-			{
-				message.suppressEmbeds(); //Remove youtube embeds there might be
-			}
-			catch(e){} //In case bot doesn't have required parmissions
-			
-			let videoUrl = parsedMessage[0];
-			
-			let urls = []; //Add support for playlists
-			
-			if(!ytdl.validateURL(videoUrl))
-=======
 			name: "p",
 			description: "Ajoute une vidéo à la liste de lecture à travers une url de vidéo ou de playlist, ou une recherche",
 			help: ["<Url>", "<Url de playlist> <Nombre d'éléments voulus>", "<Recherche>"],
 			run: async (client, message, parsedMessage) =>
->>>>>>> beta
 			{
 				if(!message.member.voice.channel) return message.channel.send("Vous devez être dans un salon vocal pour cette commande !");
 
