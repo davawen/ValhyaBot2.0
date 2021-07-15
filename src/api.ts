@@ -19,8 +19,23 @@ export function request<T>(options: string | https.RequestOptions): Promise<T>
 					res.on('end',
 						() =>
 						{
-							if(/{/.test(rawData)) resolve(JSON.parse(rawData));
-							else resolve(rawData);
+							//Check if response is JSON
+							//Directly copied from Stack Overflow
+							//https://stackoverflow.com/a/52799327
+							
+							try
+							{
+								const result = JSON.parse(rawData);
+								const type = Object.prototype.toString.call(result);
+								if(type === "[object Object]" || type === "[object Array]")
+								{
+									resolve(result);
+								}
+							}
+							catch(err) //Not JSON
+							{
+								resolve(rawData);
+							}
 						}
 					);
 					

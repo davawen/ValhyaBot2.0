@@ -4,7 +4,7 @@ export type CommandArgument = "commands" | "serverQueue" | "streamers";
 
 interface CommandConstructorOptions
 {
-	/**Function that will be run*/
+	/**Function called when the command is invoked*/
 	run: (client: Client, message: Message, parsedMessage: string[]) => void;
 	/**Name of the command, as will be typed by the user*/
 	name: string;

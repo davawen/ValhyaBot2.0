@@ -33,8 +33,8 @@ export const serverQueue: ServerQueue = new Map();
 
 export const streamers: Map<string, Streamer> = new Map();
 
-import * as __c from "./commands";
-export const commands = Object.values(__c); //Transform command object into array
+import { commands } from "./commands";
+// export const commands = Object.values(__c); //Transform command object into array
 
 //#region Discord based events
 const client = new Client();
@@ -45,39 +45,13 @@ client.on("message",
 		if(message.author.bot) return;
 		if(!message.content.startsWith("!t")) return;
 		
-		//Split based on space
-		let splitedMessage = message.content.split(" ");
-
-		//Rejoin when there are quotes
-		const parsedMessage = [];
-		let value = "";
-		for(let i = 0; i < splitedMessage.length; i++)
-		{
-			let _str = splitedMessage[i];
-			
-			let _startWithQuote = _str.startsWith("\"");
-			let _endWithQuote = _str.endsWith("\"");
-			
-			if(_startWithQuote && _endWithQuote)
-			{
-				parsedMessage.push(_str.slice(1, _str.length-1));
-			}
-			else if(_startWithQuote)
-			{
-				value += _str.slice(1) + " ";
-			}
-			else if(_endWithQuote)
-			{
-				parsedMessage.push(value + _str.slice(0, _str.length - 1)); //Remove quote at end
-				value = "";
-			}
-			else
-			{
-				if(value === "") parsedMessage.push(_str);
-				else value += _str + " ";
-			}
-		}
+		//Split message arguments with spaces and quotes
+		// command a "b c" -> ['command', 'a', 'b c']
+		// Then remove quotes from either end (only works with regex for some reason)
+		let parsedMessage = message.content.match(/[\""].+?[\""]|[^ ]+/g)
+			.map(v => v.replace(/"/g, ""));
 		
+		// Remove "!t"
 		parsedMessage.shift();
 		
 		const commandName = parsedMessage.shift();

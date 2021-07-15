@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from "uuid";
 
 interface SongConstructorOptions
 {
@@ -14,13 +15,18 @@ export class Song
 	/** Length in seconds */
 	length: number;
 	thumbnail: string;
-
+	
+	/**Unique id for every song */
+	id: string;
+	
 	constructor(options: SongConstructorOptions)
 	{
 		this.title     = options.title;
 		this.url       = options.url;
 		this.length    = options.length;
 		this.thumbnail = options.thumbnail || "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/White_Square.svg/1200px-White_Square.svg.png";
+		
+		this.id = uuidv4();
 	}
 }
 
