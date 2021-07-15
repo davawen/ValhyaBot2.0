@@ -14,7 +14,7 @@ export const config =
 
 
 
-import { Client, TextChannel } from "discord.js";
+import { Client, Intents, TextChannel } from "discord.js";
 import { Client as FaunadbClient, query as q, Documents, Collection} from 'faunadb';
 
 import { recieveWebhooks } from './web';
@@ -66,7 +66,8 @@ client.on("message",
 			{
 				if(!message.member.permissions.has('ADMINISTRATOR'))
 				{
-					return message.channel.send("Vous devez avoir les permissions administrateurs pour utiliser cette commande !");
+					message.channel.send("Vous devez avoir les permissions administrateurs pour utiliser cette commande !");
+					return;
 				}
 			}
 			
