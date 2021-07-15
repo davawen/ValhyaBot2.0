@@ -100,11 +100,15 @@ export const commands: Command[] =
 				const permissions = message.member.voice.channel.permissionsFor(client.user);
 				if(!permissions.has('CONNECT') || !permissions.has('SPEAK')) return message.channel.send("Je ne peux pas rejoindre ou parler dans le salon vocal !");
 
-
-				message.suppressEmbeds(); //Remove youtube embeds there might be
-
+				try
+				{
+					if(message.embeds.length != 0)
+						message.suppressEmbeds(); //Remove youtube embeds there might be
+				}
+				catch(err){}
+				
 				let videoUrl = parsedMessage[0];
-
+				
 				let urls = []; //Add support for playlists
 
 				if(!ytdl.validateURL(videoUrl))
