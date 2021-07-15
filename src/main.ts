@@ -46,7 +46,9 @@ client.on("message",
 		
 		//Split message arguments with spaces and quotes
 		// command a "b c" -> ['command', 'a', 'b c']
-		let parsedMessage = message.content.match(/[\""].+?[\""]|[^ ]+/g);
+		// Then remove quotes from either end (only works with regex for some reason)
+		let parsedMessage = message.content.match(/[\""].+?[\""]|[^ ]+/g)
+			.map(v => v.replace(/"/g, ""));
 		
 		// Remove "!t"
 		parsedMessage.shift();
