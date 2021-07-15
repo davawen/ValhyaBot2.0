@@ -99,7 +99,8 @@ export const commands: Command[] =
 
 				const permissions = message.member.voice.channel.permissionsFor(client.user);
 				if(!permissions.has('CONNECT') || !permissions.has('SPEAK')) return message.channel.send("Je ne peux pas rejoindre ou parler dans le salon vocal !");
-
+				
+				// May return a Promise Rejection 
 				try
 				{
 					if(message.embeds.length != 0)
@@ -275,7 +276,7 @@ export const commands: Command[] =
 	new Command(
 		{
 			name: "addStreamer",
-			description: "Ajoute un streamer à la liste de vérification dans ce salon",
+			description: "Envoie une notification dans ce salon lorsque le streamer part en live",
 			admin: true,
 			help: ["<Nom du streamer>"],
 			run: async (client, message, parsedMessage) =>
@@ -359,7 +360,7 @@ export const commands: Command[] =
 	new Command(
 		{
 			name: "deleteStreamer",
-			description: "Supprime le ou les streamers dans la liste de vérification de ce serveur",
+			description: "Supprime le ou les streamers des notifications de ce serveur",
 			admin: true,
 			help: ["<Nom1> <Nom2> <...>"],
 			run: (client, message, parsedMessage) =>
@@ -420,7 +421,7 @@ export const commands: Command[] =
 	new Command(
 		{
 			name: "listStreamer",
-			description: "Liste tous les streamers dans la liste de vérification de ce serveur",
+			description: "Liste tous les streamers initialisés dans de ce serveur",
 			run: (client, message, parsedMessage) =>
 			{
 				const embed = new MessageEmbed().setTitle('Listes des streamers').setColor('#2F4F4F');
