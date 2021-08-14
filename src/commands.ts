@@ -200,28 +200,27 @@ export const commands: Command[] =
 			}
 		}
 	),
-	new Command(
-		{
-			name: "volume",
-			description: "Change le volume de la musique",
-			help: ["<0-100>"],
-			run: (client, message, parsedMessage) =>
-			{
-				const queue = serverQueue.get(message.guild.id);
+	// new Command(
+	// 	{
+	// 		name: "volume",
+	// 		description: "Change le volume de la musique",
+	// 		help: ["<0-100>"],
+	// 		run: (client, message, parsedMessage) =>
+	// 		{
+	// 			const queue = serverQueue.get(message.guild.id);
 
-				if(queue)
-				{
-					const vol = Math.min(parseFloat(parsedMessage[0]), 100);
+	// 			if(queue)
+	// 			{
+	// 				const vol = Math.min(parseFloat(parsedMessage[0]), 100);
 					
-					queue.setVolume(vol / 100);
+	// 				queue.setVolume(vol / 100);
 
-					message.channel.send(`Volume mis à ${vol}/100`);
-				}
-				else message.channel.send("Je ne suis pas dans un salon vocal !");
-			}
-		}
-	),
-	// -TODO: Make a working pause command
+	// 				message.channel.send(`Volume mis à ${vol}/100`);
+	// 			}
+	// 			else message.channel.send("Je ne suis pas dans un salon vocal !");
+	// 		}
+	// 	}
+	// ),
 	new Command(
 		{
 			name: "pause",

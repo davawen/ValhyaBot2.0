@@ -47,7 +47,7 @@ export class Queue
 	serverQueue: ServerQueue;
 	
 	songs: Song[];
-	volume: number;
+	// volume: number;
 	paused: boolean;
 	playing: boolean;
 	
@@ -63,7 +63,7 @@ export class Queue
 		this.serverQueue = options.serverQueue;
 		
 		this.songs = [];
-		this.volume = 1;
+		// this.volume = 1;
 		this.paused = false;
 		this.playing = false;
 
@@ -87,8 +87,6 @@ export class Queue
 			}
 		);
 		
-		setInterval(() => { console.log(this.connection.state.status) }, 1000);
-		
 		this.audioPlayer = createAudioPlayer();
 
 		// Define state machine for audio player
@@ -107,12 +105,14 @@ export class Queue
 			}
 		);
 		
-		this.audioPlayer.on(AudioPlayerStatus.Playing,
-			() =>
-			{
-				console.log("Started playing!");
-			}
-		);
+		// this.audioPlayer.on(AudioPlayerStatus.Playing,
+		// 	() =>
+		// 	{
+		// 		console.log("Started playing!");
+		// 	}
+		// );
+		
+		this.connection.subscribe(this.audioPlayer);
 	}
 	
 	disconnect()
@@ -143,17 +143,11 @@ export class Queue
 		this.playing = true;
 		
 		this.current = this.songs.shift();
-		this.currentRessource = createAudioResource(ytdl(this.current.url),
-			{
-				inlineVolume: true
-			}
-		);
+		this.currentRessource = createAudioResource(ytdl(this.current.url));
 		
-		this.currentRessource.volume.setVolumeLogarithmic(this.volume);
+		// this.currentRessource.volume.setVolumeLogarithmic(this.volume);
 		
 		this.audioPlayer.play(this.currentRessource);
-		
-		this.connection.subscribe(this.audioPlayer);
 	}
 		
 	pause()
@@ -166,20 +160,21 @@ export class Queue
 		this.paused = !this.paused;
 	}
 	
-	setVolume(value: number)
-	{
-		if(this.playing) this.currentRessource.volume.setVolumeLogarithmic(this.volume);
+	// setVolume(value: number)
+	// {
+	// 	if(this.playing) this.currentRessource.volume.setVolumeLogarithmic(this.volume);
 		
-		this.volume = value;
-	}
+	// 	this.volume = value;
+	// }
 	
 	skip()
 	{
-		
+		this.audioPlayer.stop();
 	}
 	
 	clear()
 	{
-		
+		this.songs = [];
+		this.audioPlayer.stop();
 	}
 }
