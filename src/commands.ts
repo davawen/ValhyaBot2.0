@@ -173,15 +173,13 @@ export const commands: Command[] =
 							);
 							
 							serverQueue.set(message.guild.id, queue);
-							
-							queue.songs.push(song);
 						}
-						else
-						{
-							queue.songs.push(song);
-						}
+						
+						queue.songs.push(song);
 
-						queue.play();
+						// if(!queue.playing) queue.play();
+						
+						// setTimeout( () => { console.log(`${queue.audioPlayer.)}`); }, 1500 );
 						
 						message.channel.send(`Ajouté *${song.title}* à la liste !`);
 					}

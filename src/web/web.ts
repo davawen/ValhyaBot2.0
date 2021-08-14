@@ -1,4 +1,4 @@
-import * as express from 'express';
+import express from 'express';
 
 import * as fs from "fs";
 
@@ -18,7 +18,16 @@ export const recieveWebhooks = () =>
 		(req, res) =>
 		{
 			res.type("html");
-			res.write(fs.readFileSync( "public/index.html", { encoding: 'ascii' } ));
+			res.write(fs.readFileSync( "public/index.html", { encoding: 'utf-8' } ));
+			res.status(200).send();
+		}
+	);
+	
+	app.get('/style.css',
+		(req, res) =>
+		{
+			res.type("css");
+			res.write(fs.readFileSync( "public/style.css", { encoding: 'utf-8' } ));
 			res.status(200).send();
 		}
 	);

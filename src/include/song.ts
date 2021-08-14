@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
 import { Channel, Guild, VoiceChannel } from "discord.js";
-import { createAudioPlayer, AudioPlayer, VoiceConnection, joinVoiceChannel, createAudioResource, AudioPlayerStatus, AudioResource } from "@discordjs/voice"
+import { createAudioPlayer, AudioPlayer, VoiceConnection, joinVoiceChannel, createAudioResource, AudioPlayerStatus, AudioResource, VoiceConnectionStatus } from "@discordjs/voice"
 import { Server } from "http";
-import ytdl = require("ytdl-core");
+import ytdl from "ytdl-core";
 
 interface SongConstructorOptions
 {
@@ -80,6 +80,15 @@ export class Queue
 			}
 		);
 		
+		this.connection.on(VoiceConnectionStatus.Ready, 
+			() =>
+			{
+				this.play();
+			}
+		);
+		
+		setInterval(() => { console.log(this.connection.state.status) }, 1000);
+		
 		this.audioPlayer = createAudioPlayer();
 
 		// Define state machine for audio player
@@ -97,8 +106,13 @@ export class Queue
 				}
 			}
 		);
-
-		this.connection.subscribe(this.audioPlayer);
+		
+		this.audioPlayer.on(AudioPlayerStatus.Playing,
+			() =>
+			{
+				console.log("Started playing!");
+			}
+		);
 	}
 	
 	disconnect()
@@ -129,7 +143,7 @@ export class Queue
 		this.playing = true;
 		
 		this.current = this.songs.shift();
-		this.currentRessource = createAudioResource(ytdl(this.current.url), 
+		this.currentRessource = createAudioResource(ytdl(this.current.url),
 			{
 				inlineVolume: true
 			}
@@ -137,7 +151,9 @@ export class Queue
 		
 		this.currentRessource.volume.setVolumeLogarithmic(this.volume);
 		
-		this.audioPlayer.play( this.currentRessource );
+		this.audioPlayer.play(this.currentRessource);
+		
+		this.connection.subscribe(this.audioPlayer);
 	}
 		
 	pause()

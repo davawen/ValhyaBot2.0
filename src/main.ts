@@ -36,7 +36,11 @@ import { commands } from "./commands";
 // export const commands = Object.values(__c); //Transform command object into array
 
 //#region Discord based events
-const client = new Client( { intents: [ Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS ] } );
+const client = new Client( {
+	intents: [
+		Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Intents.FLAGS.GUILDS
+	]
+} );
 
 client.on("messageCreate",
 	(message) =>
