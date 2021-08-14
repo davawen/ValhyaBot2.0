@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "Second and hopefully working version of Valhyabot.",
   "main": "./dist/main.js",
-  "scripts": {},
+  "scripts": {
+	  "postinstall": "tsc && rm -v -rf src"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/davawen/ValhyaBot2.0.git"
@@ -21,6 +23,7 @@
     "dotenv": "^8.6.0",
     "express": "^4.17.1",
     "faunadb": "^4.3.0",
+    "ffmpeg-static": "^4.4.0",
     "libsodium-wrappers": "^0.7.9",
     "opusscript": "0.0.8",
     "typescript": "^4.3.5",
