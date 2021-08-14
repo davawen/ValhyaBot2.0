@@ -4,7 +4,7 @@
   "description": "Second and hopefully working version of Valhyabot.",
   "main": "./dist/main.js",
   "scripts": {
-    "postinstall": "tsc && mv src/assets dist/ && rm -v -rf src"
+	  "postinstall": "tsc && rm -v -rf src"
   },
   "repository": {
     "type": "git",
@@ -18,11 +18,13 @@
   "homepage": "https://github.com/davawen/ValhyaBot2.0#readme",
   "dependencies": {
     "@discordjs/opus": "^0.4.0",
-    "discord.js": "^12.5.3",
+    "@discordjs/voice": "^0.6.0",
+    "discord.js": "^13.1.0",
     "dotenv": "^8.6.0",
     "express": "^4.17.1",
     "faunadb": "^4.3.0",
     "ffmpeg-static": "^4.4.0",
+    "libsodium-wrappers": "^0.7.9",
     "opusscript": "0.0.8",
     "typescript": "^4.3.5",
     "uuid": "^8.3.2",

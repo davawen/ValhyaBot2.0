@@ -5,6 +5,8 @@
         "outDir": "./dist/",
         "module": "CommonJS",
         "target": "ES5",
-        "moduleResolution": "node"
+        "moduleResolution": "node",
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true
     }
 }

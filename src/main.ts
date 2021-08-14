@@ -14,10 +14,10 @@ export const config =
 
 
 
-import { Client, Intents, TextChannel } from "discord.js";
+import { Client, TextChannel, Intents } from "discord.js";
 import { Client as FaunadbClient, query as q, Documents, Collection} from 'faunadb';
 
-import { recieveWebhooks } from './web';
+import { recieveWebhooks } from './web/web';
 import { FaunaStreamerCollectionResponse } from "./api";
 
 import { ServerQueue } from './include/song';
@@ -37,9 +37,13 @@ import { commands } from "./commands";
 // export const commands = Object.values(__c); //Transform command object into array
 
 //#region Discord based events
-const client = new Client();
+const client = new Client( {
+	intents: [
+		Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES
+	]
+} );
 
-client.on("message",
+client.on("messageCreate",
 	(message) =>
 	{
 		if(message.author.bot) return;

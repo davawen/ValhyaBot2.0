@@ -46,7 +46,7 @@ export const commands: Command[] =
 					}
 				);
 
-				message.channel.send(embed);
+				message.channel.send({embeds: [embed]});
 			}
 		}
 	),
@@ -70,7 +70,7 @@ export const commands: Command[] =
 					}
 				);
 
-				const newMessage = await message.channel.send(embed);
+				const newMessage = await message.channel.send({ embeds: [embed] });
 
 				if(parsedMessage.length == 0)
 				{
@@ -95,15 +95,17 @@ export const commands: Command[] =
 			help: ["<Url>", "<Url de playlist> <Nombre d'éléments voulus>", "<Recherche>"],
 			run: async (client, message, parsedMessage) =>
 			{
-				if(!message.member.voice.channel) return message.channel.send("Vous devez être dans un salon vocal pour cette commande !");
-
-				const permissions = message.member.voice.channel.permissionsFor(client.user);
+				if(!message.member.voice.channel || !message.member.voice.channel.isVoice()) return message.channel.send("Vous devez être dans un salon vocal pour cette commande !");
+				
+				let userVoiceChannel = message.member.voice.channel as VoiceChannel;
+				
+				const permissions = userVoiceChannel.permissionsFor(client.user);
 				if(!permissions.has('CONNECT') || !permissions.has('SPEAK')) return message.channel.send("Je ne peux pas rejoindre ou parler dans le salon vocal !");
 				
 				// May return a Promise Rejection 
 				try
 				{
-					if(message.embeds.length != 0)
+					if(message.embeds.length > 0)
 						message.suppressEmbeds(); //Remove youtube embeds there might be
 				}
 				catch(err){}
@@ -162,22 +164,23 @@ export const commands: Command[] =
 
 						if(!queue)
 						{
-							serverQueue.set(message.guild.id, new Queue(message.guild));
-
-							queue = serverQueue.get(message.guild.id);
-
-							queue.songs.push(song);
+							queue = new Queue(
+								{
+									guild: message.guild,
+									channel: userVoiceChannel,
+									serverQueue: serverQueue
+								}
+							);
+							
+							serverQueue.set(message.guild.id, queue);
 						}
-						else
-						{
-							queue.songs.push(song);
-						}
+						
+						queue.songs.push(song);
 
-						if(!queue.connection)
-						{
-							play(queue.guild.id, serverQueue, message.member.voice.channel);
-						}
-
+						// if(!queue.playing) queue.play();
+						
+						// setTimeout( () => { console.log(`${queue.audioPlayer.)}`); }, 1500 );
+						
 						message.channel.send(`Ajouté *${song.title}* à la liste !`);
 					}
 				);
@@ -192,46 +195,45 @@ export const commands: Command[] =
 			{
 				const queue = serverQueue.get(message.guild.id);
 
-				if(queue) queue.disconnect(serverQueue);
+				if(queue) queue.disconnect();
 				else message.channel.send("Je ne suis pas dans un salon vocal !");
 			}
 		}
 	),
-	new Command(
-		{
-			name: "volume",
-			description: "Change le volume de la musique",
-			help: ["<0-100>"],
-			run: (client, message, parsedMessage) =>
-			{
-				const queue = serverQueue.get(message.guild.id);
-
-				if(queue)
-				{
-					const vol = Math.min(parseFloat(parsedMessage[0]), 100);
-
-					queue.dispatcher.setVolumeLogarithmic(vol / 100);
-
-					message.channel.send(`Volume mis à ${vol}/100`);
-				}
-				else message.channel.send("Je ne suis pas dans un salon vocal !");
-			}
-		}
-	),
-	// TODO: Make a working pause command
 	// new Command(
 	// 	{
-	// 		name: "pause",
-	// 		description: "Met la musique actuelle en pause."
+	// 		name: "volume",
+	// 		description: "Change le volume de la musique",
+	// 		help: ["<0-100>"],
 	// 		run: (client, message, parsedMessage) =>
 	// 		{
-	// 			let queue = serverQueue.get(message.guild.id);
-				
-	// 			if(queue) queue.pause();
+	// 			const queue = serverQueue.get(message.guild.id);
+
+	// 			if(queue)
+	// 			{
+	// 				const vol = Math.min(parseFloat(parsedMessage[0]), 100);
+					
+	// 				queue.setVolume(vol / 100);
+
+	// 				message.channel.send(`Volume mis à ${vol}/100`);
+	// 			}
 	// 			else message.channel.send("Je ne suis pas dans un salon vocal !");
 	// 		}
 	// 	}
 	// ),
+	new Command(
+		{
+			name: "pause",
+			description: "Met la musique actuelle en pause.",
+			run: (client, message, parsedMessage) =>
+			{
+				let queue = serverQueue.get(message.guild.id);
+				
+				if(queue) queue.pause();
+				else message.channel.send("Je ne suis pas dans un salon vocal !");
+			}
+		}
+	),
 	new Command(
 		{
 			name: "skip",
@@ -240,7 +242,7 @@ export const commands: Command[] =
 			{
 				const queue = serverQueue.get(message.guild.id);
 
-				if(queue) queue.dispatcher.end();
+				if(queue) queue.skip();
 				else message.channel.send("Je ne suis pas dans un salon vocal !");
 			}
 		}
@@ -255,7 +257,8 @@ export const commands: Command[] =
 
 				if(queue)
 				{
-					const time = secondsToISO(Math.floor(queue.dispatcher.streamTime / 1000));
+					// const time = secondsToISO(Math.floor(queue.connection. / 1000));
+					const time = "00:00:00";
 
 					const embed = new MessageEmbed()
 						.setTitle('Listes des musiques')
@@ -265,7 +268,7 @@ export const commands: Command[] =
 
 					queue.songs.forEach(s => embed.addField(s.title, `\`${secondsToISO(s.length)}\``));
 
-					message.channel.send(embed);
+					message.channel.send({embeds: [embed]});
 				}
 				else message.channel.send("Aucune musique en cours !");
 			}
@@ -448,52 +451,13 @@ export const commands: Command[] =
 					return message.channel.send(`Aucun streamer n'est vérifié dans ce serveur!`);
 				}
 
-				message.channel.send(embed);
+				message.channel.send({ embeds: [embed]});
 			}
 		}
 	)
 ];
 
 //#region Utility
-
-// TODO: Move to server queue class
-async function play(id: string, serverQueue: ServerQueue, channel?: VoiceChannel)
-{
-	const queue = serverQueue.get(id);
-	
-	if(channel)
-	{
-		queue.voiceChannel = channel;
-		queue.connection = await channel.join();
-	}
-	
-	if(!queue.voiceChannel || !queue.connection) return;
-	
-	if(queue.songs.length <= 0)
-	{
-		//Wait a minute before disconnecting, in case client wants to add another music
-		
-		setTimeout(
-			() =>
-			{
-				if(queue.songs.length <= 0) queue.disconnect(serverQueue);
-			}
-		, 60000);
-		return;
-	}
-	
-	queue.current = queue.songs.shift();
-	
-	queue.dispatcher = queue.connection
-		.play(ytdl(queue.current.url))
-		.on("finish",
-			() =>
-			{
-				play(id, serverQueue);
-			}
-		)
-		.on("error", console.log);
-}
 
 /** Convert seconds into hours:minutes:seconds string */
 function secondsToISO(seconds: number): string
