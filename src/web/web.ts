@@ -1,7 +1,9 @@
 import * as express from 'express';
 
-import { streamers } from './main';
-import { request, TwitchStreamWebhook } from './api';
+import * as fs from "fs";
+
+import { streamers } from '../main';
+import { request, TwitchStreamWebhook } from '../api';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -11,6 +13,16 @@ app.use(express.urlencoded({ extended: false }));
 
 export const recieveWebhooks = () =>
 {
+	// Serve simple website
+	app.get('/',
+		(req, res) =>
+		{
+			res.type("html");
+			res.write(fs.readFileSync( "public/index.html", { encoding: 'ascii' } ));
+			res.status(200).send();
+		}
+	);
+	
 	app.get('/twitch',
 		(req, res) =>
 		{
