@@ -43,11 +43,18 @@ const client = new Client( {
 	]
 } );
 
+const goodnights = ["bonne nuit", "gnight", "good night"];
+
 client.on("messageCreate",
 	(message) =>
 	{
 		if(message.author.bot) return;
-		if(!message.content.startsWith("!t")) return;
+		if(!message.content.startsWith("!t"))
+		{
+			if(goodnights.some(gn => message.content.startsWith(gn))) message.channel.send("https://c.tenor.com/43cc01Cj1JkAAAAd/knight-dance.gif");
+			
+			return;
+		}
 		
 		//Split message arguments with spaces and quotes
 		// command a "b c" -> ['command', 'a', 'b c']
