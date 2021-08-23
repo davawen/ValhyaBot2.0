@@ -4,7 +4,7 @@
   "description": "Second and hopefully working version of Valhyabot.",
   "main": "./dist/main.js",
   "scripts": {
-	  "postinstall": "tsc && rm -v -rf src"
+    "postinstall": "tsc"
   },
   "repository": {
     "type": "git",
