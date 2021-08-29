@@ -7,7 +7,8 @@ import { Command } from './include/command';
 import { ServerQueue, Queue, Song } from './include/song';
 import { Streamer } from "./include/streamer";
 
-import { config, faunaClient, serverQueue, streamers } from "./main";
+import { config } from './include/config'
+import { faunaClient, serverQueue, streamers } from "./main";
 import { request, YoutubeSearchResponse, sleep, YoutubePlaylistItemListResponse, TwitchUserResponse, FaunaStreamerDocument } from './api'
 
 

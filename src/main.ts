@@ -1,33 +1,18 @@
-import * as dotenv from "dotenv";
-dotenv.config();
-
-export const config =
-{
-	TOKEN: process.env.TOKEN,
-	TWITCH_ID: process.env.TWITCH_ID,
-	TWITCH_OAUTH: process.env.TWITCH_OAUTH,
-	TWITCH_SECRET: process.env.TWITCH_SECRET,
-	FAUNA_SECRET: process.env.FAUNA_SECRET,
-	FAUNA_KEY: process.env.FAUNA_KEY,
-	GOOGLE_ID: process.env.GOOGLE_ID
-};
-
-
-
-import { Client, TextChannel, Intents } from "discord.js";
+import { Client, TextChannel, Intents } from 'discord.js';
 import { Client as FaunadbClient, query as q, Documents, Collection} from 'faunadb';
+import { initializeApp } from 'firebase/app'
 
 import { recieveWebhooks } from './web/web';
 import { FaunaStreamerCollectionResponse } from "./api";
 
 import { ServerQueue } from './include/song';
 import { Streamer } from './include/streamer';
-
+import { config, firebaseConfig } from './include/config'
 
 
 //Setup global values needed bt commands
 export const faunaClient = new FaunadbClient({ secret: config.FAUNA_SECRET });
-
+const firebaseApp = initializeApp(firebaseConfig);
 
 export const serverQueue: ServerQueue = new Map();
 

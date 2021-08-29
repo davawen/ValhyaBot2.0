@@ -1,8 +1,9 @@
-import * as https from "https";
-import { config } from './main';
-import * as  querystring from 'querystring';
+import * as https from 'https';
+import * as querystring from 'querystring';
 
 import { query as q } from 'faunadb';
+
+// import { config } from './include/config';
 
 export function request<T>(options: string | https.RequestOptions): Promise<T>
 {

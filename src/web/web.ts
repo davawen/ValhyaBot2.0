@@ -2,7 +2,6 @@ import express from 'express';
 
 import * as fs from "fs";
 
-import { streamers } from '../main';
 import { request, TwitchStreamWebhook } from '../api';
 
 const app = express();
@@ -10,6 +9,32 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+let q = 'tasks';
+
+let url = process.env.CLOUDAMQP_URL || "amqp://localhost";
+let open = require('amqplib').connect(url);
+
+open.then(
+	async conn =>
+	{
+		const ch = await conn.createChannel();
+		const ok = await ch.assertQueue(q);
+		
+			while(true)
+			{
+				ch.consume(q,
+					msg =>
+					{
+						if(msg == null) return;
+						
+						console.log(msg.content.toString());
+						ch.ack(msg);
+					}
+				);
+			}
+	}
+);
 
 export const recieveWebhooks = () =>
 {

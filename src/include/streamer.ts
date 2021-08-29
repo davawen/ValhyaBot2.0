@@ -1,8 +1,10 @@
 import { Client, Message, TextChannel } from 'discord.js'
 import { query as q, Documents, Collection } from 'faunadb';
 
-import { config, faunaClient } from '../main';
+import { faunaClient } from '../main';
 import { request, sleep, TwitchChannelResponse } from '../api';
+
+import { config } from './config'
 
 interface StreamerConstructorOptions
 {
