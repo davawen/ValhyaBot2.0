@@ -135,7 +135,21 @@ open.then(
 				{
 					if(msg == null) return;
 					
-					console.log(msg.content.toJSON());
+					const event: AMQPEvent = JSON.parse( msg.content.toString() );
+					
+					switch(event.event)
+					{
+						case "online":
+							let streamer = streamers.get(event.data.name);
+							
+							streamer.channels.forEach(
+								channel =>
+								{
+									channel.send("@everyone" + ` ${streamer.displayName} est en ligne !\nhttps://www.twitch.tv/${streamer.name}`)
+								}
+							);
+							break;
+					}
 					
 					ch.ack(msg);
 				}

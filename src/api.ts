@@ -234,6 +234,6 @@ export interface DatabaseStreamer
 
 export interface AMQPEvent
 {
-	event: string;
+	event: 'online';
 	data: { [key: string]: any };
 }

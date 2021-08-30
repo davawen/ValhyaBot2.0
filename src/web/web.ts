@@ -23,9 +23,6 @@ function serve(ch: Channel)
 			res.type("html");
 			res.write(fs.readFileSync( "public/index.html", { encoding: 'utf-8' } ));
 			res.status(200).send();
-			
-			console.log("Got a visit!!");
-			ch.sendToQueue(queueID, Buffer.from("Got a visit!!"));
 		}
 	);
 
@@ -71,17 +68,6 @@ function serve(ch: Channel)
 				};
 				
 				ch.sendToQueue(queueID, Buffer.from(JSON.stringify(event)));
-				
-				// let streamer = streamers.get(stream.user_login);
-				
-				//console.log(stream);
-				
-				// streamer.channels.forEach(
-				// 	channel =>
-				// 	{
-				// 		channel.send("@everyone" + ` ${streamer.displayName} est en ligne !\nhttps://www.twitch.tv/${streamer.name}`)
-				// 	}
-				// );
 			}
 			catch(err)
 			{
