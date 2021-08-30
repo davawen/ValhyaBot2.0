@@ -126,37 +126,30 @@ open.then(
 	async conn =>
 	{
 		const ch = await conn.createChannel();
-		const ok = await ch.assertQueue(amqpQueueID);
+		const ok = await ch.assertQueue(amqpQueueID, { durable: true });
 		
-		while(true)
-		{
-			ch.consume(amqpQueueID,
-				(msg) =>
+		ch.consume(amqpQueueID,
+			(msg) =>
+			{
+				const event: AMQPEvent = JSON.parse( msg.content.toString() );
+				
+				switch(event.event)
 				{
-					if(msg == null) return;
-					
-					const event: AMQPEvent = JSON.parse( msg.content.toString() );
-					
-					switch(event.event)
-					{
-						case "online":
-							let streamer = streamers.get(event.data.name);
-							
-							streamer.channels.forEach(
-								channel =>
-								{
-									channel.send("@everyone" + ` ${streamer.displayName} est en ligne !\nhttps://www.twitch.tv/${streamer.name}`)
-								}
-							);
-							break;
-					}
-					
-					ch.ack(msg);
+					case "online":
+						let streamer = streamers.get(event.data.name);
+						
+						streamer.channels.forEach(
+							channel =>
+							{
+								channel.send("@everyone" + ` ${streamer.displayName} est en ligne !\nhttps://www.twitch.tv/${streamer.name}`)
+							}
+						);
+						break;
 				}
-			);
-			
-			await sleep(2000);
-		}
+				
+				ch.ack(msg);
+			}
+		);
 	}
 );
 
