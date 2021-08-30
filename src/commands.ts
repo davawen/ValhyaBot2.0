@@ -392,12 +392,13 @@ export const commands: Command[] =
 									let it = channels.values();
 									let curr = it.next();
 									
-									while(!curr.done)
+									do
 									{
 										channelIds[index] = curr.value;
 										index++;
 										curr = it.next();
 									}
+									while(!curr.done);
 								}
 								
 								updateDoc(streamer.dbId,
