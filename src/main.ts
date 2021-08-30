@@ -3,7 +3,9 @@ import { Client, TextChannel, Intents } from 'discord.js';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDoc, getDocs, QuerySnapshot, CollectionReference } from 'firebase/firestore/lite';
 
-import { DatabaseStreamer } from "./api";
+import { connect, Connection, Channel } from 'amqplib'
+
+import { sleep, DatabaseStreamer, AMQPEvent } from "./api";
 
 import { ServerQueue } from './include/song';
 import { Streamer } from './include/streamer';
@@ -14,6 +16,9 @@ import { config, firebaseConfig } from './include/config'
 export const firebaseApp = initializeApp(firebaseConfig);
 export const db = getFirestore(firebaseApp);
 export const streamerCollection = collection(db, "streamers") as CollectionReference<DatabaseStreamer>;
+
+const amqpQueueID = 'tasks';
+const amqpUrl = process.env.CLOUDAMQP_URL || "amqp://localhost";
 
 export const serverQueue: ServerQueue = new Map();
 
@@ -112,7 +117,33 @@ client.on("ready",
 );
 
 // console.log(config);
-
 client.login(config.TOKEN).catch(console.log);
+
+// Listen to AMQP queue
+const open = connect(amqpUrl);
+
+open.then(
+	async conn =>
+	{
+		const ch = await conn.createChannel();
+		const ok = await ch.assertQueue(amqpQueueID);
+		
+		while(true)
+		{
+			ch.consume(amqpQueueID,
+				(msg) =>
+				{
+					if(msg == null) return;
+					
+					console.log(msg.content.toJSON());
+					
+					ch.ack(msg);
+				}
+			);
+			
+			await sleep(2000);
+		}
+	}
+);
 
 //#endregion

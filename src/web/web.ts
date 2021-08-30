@@ -23,6 +23,9 @@ function serve(ch: Channel)
 			res.type("html");
 			res.write(fs.readFileSync( "public/index.html", { encoding: 'utf-8' } ));
 			res.status(200).send();
+			
+			console.log("Got a visit!!");
+			ch.sendToQueue(queueID, Buffer.from("Got a visit!!"));
 		}
 	);
 
