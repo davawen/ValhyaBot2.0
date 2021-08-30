@@ -1,8 +1,8 @@
 import { Client, Message, TextChannel } from 'discord.js'
-import { query as q, Documents, Collection } from 'faunadb';
+import { collection, getDoc, doc, updateDoc, DocumentReference } from 'firebase/firestore/lite'
 
-import { faunaClient } from '../main';
-import { request, sleep, TwitchChannelResponse } from '../api';
+import { db } from '../main';
+import { request, sleep, TwitchChannelResponse, DatabaseStreamer } from '../api';
 
 import { config } from './config'
 
@@ -11,6 +11,7 @@ interface StreamerConstructorOptions
 	name: string;
 	displayName: string;
 	id: string;
+	dbId: DocumentReference<DatabaseStreamer>;
 	channels: TextChannel | TextChannel[];
 	date?: number;
 }
@@ -20,6 +21,8 @@ export class Streamer
 	private _name: string;
 	private _displayName: string;
 	private _id: string;
+	/**Database reference to document */
+	private _dbId: DocumentReference<DatabaseStreamer>;
 	/**Unix date at which the subscribtion started */
 	private _date: number;
 	private _renewSubscribtionTimeout?: NodeJS.Timeout;
@@ -31,6 +34,7 @@ export class Streamer
 		this._name = options.name;
 		this._displayName = options.displayName;
 		this._id = options.id;
+		this._dbId = options.dbId;
 		this._date = options.date || Date.now();
 		this._renewSubscribtionTimeout = null;
 		
@@ -44,10 +48,11 @@ export class Streamer
 		}
 	}
 	
-	get name() { return this._name; };
-	get displayName() { return this._displayName; };
-	get id() { return this._id; };
-	get date() { return this._date; };
+	get name()        { return this._name;        }
+	get displayName() { return this._displayName; }
+	get id()          { return this._id;          }
+	get dbId()        { return this._dbId;        }
+	get date()        { return this._date;        }
 	
 	renewSubscription()
 	{
@@ -55,17 +60,11 @@ export class Streamer
 			() =>
 			{
 				this._date = Date.now();
-
-				faunaClient.query(
-					q.Update(
-						q.Select('ref', q.Get(q.Match(q.Index('streamersById'), this._id))),
-						{
-							data:
-							{
-								date: this._date
-							}
-						}
-					)
+				
+				updateDoc(this._dbId, 
+					{
+						date: this._date
+					}
 				);
 				
 				this.subscribe(true);

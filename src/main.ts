@@ -1,9 +1,9 @@
 import { Client, TextChannel, Intents } from 'discord.js';
-import { Client as FaunadbClient, query as q, Documents, Collection} from 'faunadb';
-import { initializeApp } from 'firebase/app'
 
-import { recieveWebhooks } from './web/web';
-import { FaunaStreamerCollectionResponse } from "./api";
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, getDoc, getDocs, QuerySnapshot, CollectionReference } from 'firebase/firestore/lite';
+
+import { DatabaseStreamer } from "./api";
 
 import { ServerQueue } from './include/song';
 import { Streamer } from './include/streamer';
@@ -11,15 +11,15 @@ import { config, firebaseConfig } from './include/config'
 
 
 //Setup global values needed bt commands
-export const faunaClient = new FaunadbClient({ secret: config.FAUNA_SECRET });
-const firebaseApp = initializeApp(firebaseConfig);
+export const firebaseApp = initializeApp(firebaseConfig);
+export const db = getFirestore(firebaseApp);
+export const streamerCollection = collection(db, "streamers") as CollectionReference<DatabaseStreamer>;
 
 export const serverQueue: ServerQueue = new Map();
 
 export const streamers: Map<string, Streamer> = new Map();
 
 import { commands } from "./commands";
-// export const commands = Object.values(__c); //Transform command object into array
 
 //#region Discord based events
 const client = new Client( {
@@ -81,40 +81,37 @@ client.on("ready",
 		console.log(`Logged in as ${client.user.username}!`);
 		
 		//Get already present streamers from database
-		const faunaStreamers: FaunaStreamerCollectionResponse = await faunaClient.query(
-			q.Map(
-				q.Paginate(Documents(Collection('streamers'))),
-				q.Lambda(x => q.Get(x))
-			)
-		);
+		const dbStreamers = await getDocs(streamerCollection);
 		
-		faunaStreamers.data.forEach(
-			faunaStreamer =>
+		dbStreamers.docs.forEach(
+			(dbStreamer) =>
 			{
 				let channels: TextChannel[] = [];
 				
-				faunaStreamer.data.channels.forEach(channelID => channels.push(client.channels.cache.get(channelID) as TextChannel));
+				const dbStreamerData = dbStreamer.data();
+				
+				dbStreamerData.channels.forEach(async channelID => channels.push((await client.channels.fetch(channelID)) as TextChannel));
 				
 				let newStreamer = new Streamer(
 					{
-						name: faunaStreamer.data.name,
-						displayName: faunaStreamer.data.displayName,
+						name: dbStreamerData.name,
+						displayName: dbStreamerData.displayName,
 						channels: channels,
-						id: faunaStreamer.data.id,
-						date: faunaStreamer.data.date
+						id: dbStreamerData.id,
+						dbId: dbStreamer.ref,
+						date: dbStreamerData.date
 					}
 				);
 				
-				streamers.set(faunaStreamer.data.name, newStreamer);
+				streamers.set(dbStreamerData.name, newStreamer);
 				
 				newStreamer.renewSubscription();
 			}
 		);
-		
-		//Check for webhooks
-		recieveWebhooks();
 	}
 );
+
+// console.log(config);
 
 client.login(config.TOKEN).catch(console.log);
 

@@ -1,8 +1,6 @@
 import * as https from 'https';
 import * as querystring from 'querystring';
 
-import { query as q } from 'faunadb';
-
 // import { config } from './include/config';
 
 export function request<T>(options: string | https.RequestOptions): Promise<T>
@@ -221,22 +219,8 @@ export interface TwitchStreamWebhook
 
 //#endregion
 
-//#region FaunaDB Responses
-
-export interface FaunaStreamerCollectionResponse
-{
-	data: FaunaStreamerDocument[];
-}
-
-export interface FaunaStreamerDocument
-{
-	ref: q.ExprVal;
-	/**Unix timestamp of the document */
-	ts: number,
-	data: FaunaStreamer;
-}
-
-export interface FaunaStreamer
+//#region Database Responses
+export interface DatabaseStreamer
 {
 	name: string;
 	displayName: string;
@@ -247,3 +231,9 @@ export interface FaunaStreamer
 }
 
 //#endregion
+
+export interface AMQPEvent
+{
+	event: string;
+	data: { [key: string]: any };
+}

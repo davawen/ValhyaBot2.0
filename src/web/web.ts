@@ -1,44 +1,22 @@
 import express from 'express';
 
+import { connect, Connection, Channel } from 'amqplib'
 import * as fs from "fs";
 
-import { request, TwitchStreamWebhook } from '../api';
+import { /* request */TwitchStreamWebhook, AMQPEvent } from '../api';
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+const queueID = 'tasks';
+const url = process.env.CLOUDAMQP_URL || "amqp://localhost";
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-let q = 'tasks';
-
-let url = process.env.CLOUDAMQP_URL || "amqp://localhost";
-let open = require('amqplib').connect(url);
-
-open.then(
-	async conn =>
-	{
-		const ch = await conn.createChannel();
-		const ok = await ch.assertQueue(q);
-		
-			while(true)
-			{
-				ch.consume(q,
-					msg =>
-					{
-						if(msg == null) return;
-						
-						console.log(msg.content.toString());
-						ch.ack(msg);
-					}
-				);
-			}
-	}
-);
-
-export const recieveWebhooks = () =>
+function serve(ch: Channel)
 {
-	// Serve simple website
+	//#region Serve simple website
 	app.get('/',
 		(req, res) =>
 		{
@@ -47,7 +25,7 @@ export const recieveWebhooks = () =>
 			res.status(200).send();
 		}
 	);
-	
+
 	app.get('/style.css',
 		(req, res) =>
 		{
@@ -56,7 +34,8 @@ export const recieveWebhooks = () =>
 			res.status(200).send();
 		}
 	);
-	
+	//#endregion
+
 	app.get('/twitch',
 		(req, res) =>
 		{
@@ -68,7 +47,7 @@ export const recieveWebhooks = () =>
 			}
 		}
 	)
-	
+
 	app.post('/twitch',
 		(req, res) =>
 		{
@@ -81,16 +60,25 @@ export const recieveWebhooks = () =>
 				if(data.length <= 0) return; //Stream offline
 				
 				let stream: TwitchStreamWebhook = data[0];
-				let streamer = streamers.get(stream.user_login);
+				
+				const event: AMQPEvent = 
+				{
+					event: "online",
+					data: { name: stream.user_login }
+				};
+				
+				ch.sendToQueue(queueID, Buffer.from(JSON.stringify(event)));
+				
+				// let streamer = streamers.get(stream.user_login);
 				
 				//console.log(stream);
 				
-				streamer.channels.forEach(
-					channel =>
-					{
-						channel.send("@everyone" + ` ${streamer.displayName} est en ligne !\nhttps://www.twitch.tv/${streamer.name}`)
-					}
-				);
+				// streamer.channels.forEach(
+				// 	channel =>
+				// 	{
+				// 		channel.send("@everyone" + ` ${streamer.displayName} est en ligne !\nhttps://www.twitch.tv/${streamer.name}`)
+				// 	}
+				// );
 			}
 			catch(err)
 			{
@@ -106,3 +94,17 @@ export const recieveWebhooks = () =>
 		}	
 	);
 }
+
+// Start AMQP queue
+
+let open = connect(url);
+
+open.then(
+	async conn =>
+	{
+		const ch = await conn.createChannel();
+		const ok = await ch.assertQueue(queueID);
+		
+		serve(ch);
+	}
+);

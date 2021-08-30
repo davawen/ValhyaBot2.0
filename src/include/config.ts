@@ -7,8 +7,6 @@ export const config =
 	TWITCH_ID: process.env.TWITCH_ID,
 	TWITCH_OAUTH: process.env.TWITCH_OAUTH,
 	TWITCH_SECRET: process.env.TWITCH_SECRET,
-	FAUNA_SECRET: process.env.FAUNA_SECRET,
-	FAUNA_KEY: process.env.FAUNA_KEY,
 	GOOGLE_ID: process.env.GOOGLE_ID,
 	FIREBASE_KEY: process.env.FIREBASE_KEY
 };

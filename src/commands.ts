@@ -1,15 +1,14 @@
 import { Client, Message, MessageEmbed, TextChannel, VoiceChannel } from "discord.js";
+import { collection, doc, setDoc, deleteDoc, updateDoc, arrayUnion, DocumentReference, CollectionReference } from 'firebase/firestore/lite'
 import * as ytdl from 'ytdl-core';
-
-import {query as q, Collection} from 'faunadb';
 
 import { Command } from './include/command';
 import { ServerQueue, Queue, Song } from './include/song';
 import { Streamer } from "./include/streamer";
 
 import { config } from './include/config'
-import { faunaClient, serverQueue, streamers } from "./main";
-import { request, YoutubeSearchResponse, sleep, YoutubePlaylistItemListResponse, TwitchUserResponse, FaunaStreamerDocument } from './api'
+import { db, streamerCollection, serverQueue, streamers } from "./main";
+import { request, sleep, YoutubeSearchResponse, YoutubePlaylistItemListResponse, TwitchUserResponse, DatabaseStreamer } from './api'
 
 
 export const commands: Command[] = 
@@ -310,7 +309,8 @@ export const commands: Command[] =
 							channels: message.channel as TextChannel,
 							id: streamer.id,
 							name: streamer.login,
-							displayName: streamer.display_name
+							displayName: streamer.display_name,
+							dbId: doc(streamerCollection, streamer.login)
 						}
 					);
 
@@ -319,45 +319,32 @@ export const commands: Command[] =
 					//Subscribe to twitch API
 					newStreamer.subscribe(true);
 
-					//Create FaunaDB document
-					faunaClient.query(
-						q.Create(
-							Collection('streamers'),
-							{
-								data:
-								{
-									channels: [message.channel.id],
-									id: streamer.id,
-									name: streamer.login,
-									displayName: streamer.display_name,
-									date: newStreamer.date
-								}
-							}
-						)
+					//Create Firestore document
+					setDoc( newStreamer.dbId,
+						{
+							channels: [message.channel.id],
+							id: streamer.id,
+							name: streamer.login,
+							displayName: streamer.display_name,
+							date: newStreamer.date
+						}
 					);
 				}
 				else
 				{
 					//Append new channel to the set
-					streamers.get(streamer.login).channels.add(message.channel as TextChannel);
-
-					//Append new channel to FaunaDB document
-					const oldDocument: FaunaStreamerDocument = await faunaClient.query(q.Get(q.Match(q.Index('streamersById'), streamer.id)));
-
-					faunaClient.query(
-						q.Update(
-							q.Select('ref', oldDocument),
-							{
-								data:
-								{
-									channels: [...oldDocument.data.channels, streamer.id]
-								}
-							}
-						)
+					const currentStreamer = streamers.get(streamer.login);
+					
+					currentStreamer.channels.add(message.channel as TextChannel);
+					
+					updateDoc(currentStreamer.dbId,
+						{
+							channels: arrayUnion(message.channel.id)
+						}
 					);
+					
+					message.channel.send(`Le streamer ${streamer.display_name} à été ajouté à la liste`);
 				}
-
-				message.channel.send(`Le streamer ${streamer.display_name} à été ajouté à la liste`);
 			}
 		}
 	),
@@ -376,44 +363,47 @@ export const commands: Command[] =
 						{
 							const streamer = streamers.get(streamerName);
 							const channels = streamer.channels;
-
-							//Have to use this to avoid skipping channels and to make only one call to faunadb
+							
 							const channelsToRemove = Array.from(channels).filter(channel => channel.guild.id === message.guild.id);
-
-							const oldDocument: FaunaStreamerDocument = await faunaClient.query(q.Get(q.Match(q.Index('streamersById'), streamer.id)));
-
+							
 							channelsToRemove.forEach(
 								channelToRemove =>
 								{
 									channels.delete(channelToRemove);
-
-									oldDocument.data.channels.splice(oldDocument.data.channels.indexOf(channelToRemove.id), 1);
-
+									
 									message.channel.send(`Supprimé ${streamerName} du salon ${channelToRemove.name} !`);
 								}
 							);
-
-
+							
+							
 							if(channels.size == 0) //If streamer is no longer anywhere, unsubscribe from webhook and remove document
 							{
 								streamer.subscribe(false);
-
-								faunaClient.query(
-									q.Delete(q.Select('ref', oldDocument))
-								);
+								
+								deleteDoc(streamer.dbId);
+								streamers.delete(streamerName);
 							}
 							else //Else, update fauna doccument
 							{
-								faunaClient.query(
-									q.Update(
-										q.Select('ref', oldDocument),
-										{
-											data:
-											{
-												channels: oldDocument.data.channels
-											}
-										}
-									)
+								const channelIds: string[] = new Array(channels.size);
+								
+								{
+									let index = 0;
+									let it = channels.values();
+									let curr = it.next();
+									
+									while(!curr.done)
+									{
+										channelIds[index] = curr.value;
+										index++;
+										curr = it.next();
+									}
+								}
+								
+								updateDoc(streamer.dbId,
+									{
+										channels: channelIds
+									}
 								);
 							}
 						}
