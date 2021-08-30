@@ -80,7 +80,7 @@ export class Streamer
 				hostname: "api.twitch.tv",
 				path: encodeURI(
 					'/helix/webhooks/hub' +
-					'?hub.callback=https://valhyabot-2.herokuapp.com/twitch' +
+					'?hub.callback=https://valhyabot2-web.herokuapp.com/twitch' +
 					`&hub.mode=${subscribe ? "subscribe" : "unsubscribe"}` +
 					`&hub.topic=https://api.twitch.tv/helix/streams?user_id=${this._id}` +
 					'&hub.lease_seconds=864000'
