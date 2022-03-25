@@ -1,14 +1,13 @@
 import { Client, Message, MessageEmbed, TextChannel, VoiceChannel } from "discord.js";
-import { collection, doc, setDoc, deleteDoc, updateDoc, arrayUnion, DocumentReference, CollectionReference } from 'firebase/firestore/lite'
+import { URL } from 'url'
 import * as ytdl from 'ytdl-core';
 
 import { Command } from './include/command';
 import { ServerQueue, Queue, Song } from './include/song';
-import { Streamer } from "./include/streamer";
 
 import { config } from './include/config'
-import { db, streamerCollection, serverQueue, streamers } from "./main";
-import { request, sleep, YoutubeSearchResponse, YoutubePlaylistItemListResponse, TwitchUserResponse, DatabaseStreamer } from './api'
+import { serverQueue } from "./main";
+import { sleep, YoutubeSearchResponse, YoutubePlaylistItemListResponse } from './api'
 
 
 export const commands: Command[] = 
@@ -110,78 +109,99 @@ export const commands: Command[] =
 				}
 				catch(err){}
 				
-				let videoUrl = parsedMessage[0];
-				
-				let urls = []; //Add support for playlists
+				let urls: string[] = []; //Add support for playlists
 
-				if(!ytdl.validateURL(videoUrl))
+			    // If not a valid youtube URL, treat it as a search
+				if(!ytdl.validateURL(parsedMessage[0]))
 				{
-					videoUrl = parsedMessage.join(" ");
+					const videoQuery = parsedMessage.join(" ");
 
-					let video = await request<YoutubeSearchResponse>(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q=${encodeURIComponent(videoUrl)}&key=${config.GOOGLE_ID}`);
+					try
+					{
+						const video: YoutubeSearchResponse = await fetch(
+							`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q=${encodeURIComponent(videoQuery)}&key=${config.GOOGLE_ID}`
+						).then(res => res.json());
+				   
+						if(video.items.length == 0) return message.channel.send(`Je n'ai pas pu trouver une vidéo avec ce titre !`);
 
-					if(video.items.length == 0) return message.channel.send(`Je n'ai pas pu trouver une vidéo avec ce titre !`);
-
-					urls[0] = video.items[0].id.videoId;
-				}
-				else if(/(&list=)/.test(videoUrl)) //Check if the url is a playlist
-				{
-					//Google only accepts the playlist id with nothing else, so we extract it
-					let playlistId = videoUrl.split("?")[1].split("&list=")[1].split("&")[0];
-
-					//Request list of videos
-					let videos = await request<YoutubePlaylistItemListResponse>(
-						`https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails%2Cid&maxResults=${parseInt(parsedMessage[1])}&playlistId=${playlistId}&key=${config.GOOGLE_ID}`
-					);
-
-					videos.items.forEach(
-						(item) =>
-						{
-							urls.push(item.contentDetails.videoId);
-						}
-					);
+						urls[0] = video.items[0].id.videoId;
+					}
+					catch(err)
+					{
+						console.error("youtube search query failed with: " + err);
+						return message.channel.send("Une erreur est arrivée pendant la recherche.");
+					}
 				}
 				else
 				{
-					urls[0] = videoUrl;
+					const videoUrl = new URL(parsedMessage[0]);
+					if(videoUrl.searchParams.has("list")) //Check if the url is a playlist
+					{
+						try
+						{
+							// Google only needs the playlist id 
+							let playlistId = videoUrl.searchParams.get("list");
+
+
+							//Request list of videos
+							let videos: YoutubePlaylistItemListResponse = await fetch(
+								`https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails%2Cid&maxResults=${parseInt(parsedMessage[1])}&playlistId=${playlistId}&key=${config.GOOGLE_ID}`
+							).then(res => res.json());
+
+							videos.items.forEach( item => urls.push(item.contentDetails.videoId));
+						}
+						catch(err)
+						{
+							console.error("youtube playlist query failed with: " + err);
+							return message.channel.send("Une erreur est arrivée pendant la demande de playlist");
+						}
+					}
+					else // Valid youtube URL and not a playlist
+					{
+						urls[0] = videoUrl.href;
+					}
 				}
 
 				urls.forEach(
 					async (url) =>
 					{
-						let _songInfo = await ytdl.getInfo(url);
-
-						let song = new Song(
-							{
-								title: _songInfo.videoDetails.title,
-								url: _songInfo.videoDetails.video_url,
-								length: parseFloat(_songInfo.videoDetails.lengthSeconds),
-								thumbnail: _songInfo.videoDetails.thumbnails[3].url
-							}
-						);
-
-						let queue = serverQueue.get(message.guild.id);
-
-						if(!queue)
+						try
 						{
-							queue = new Queue(
+							const songInfo = await ytdl.getInfo(url);
+
+							const song = new Song(
 								{
-									guild: message.guild,
-									channel: userVoiceChannel,
-									serverQueue: serverQueue
+									title: songInfo.videoDetails.title,
+									url: songInfo.videoDetails.video_url,
+									length: parseFloat(songInfo.videoDetails.lengthSeconds),
+									thumbnail: songInfo.videoDetails.thumbnails[3].url
 								}
 							);
-							
-							serverQueue.set(message.guild.id, queue);
-						}
-						
-						queue.songs.push(song);
 
-						// if(!queue.playing) queue.play();
-						
-						// setTimeout( () => { console.log(`${queue.audioPlayer.)}`); }, 1500 );
-						
-						message.channel.send(`Ajouté *${song.title}* à la liste !`);
+							let queue = serverQueue.get(message.guild.id);
+
+							if(!queue)
+							{
+								queue = new Queue(
+									{
+										guild: message.guild,
+										channel: userVoiceChannel,
+										serverQueue: serverQueue
+									}
+								);
+
+								serverQueue.set(message.guild.id, queue);
+							}
+
+							queue.songs.push(song);
+
+							message.channel.send(`Ajouté *${song.title}* à la liste !`);
+						}
+						catch(err)
+						{
+							console.error(`adding song to queue failed with: ${err}`);
+							message.channel.send(`Une erreur est arrivée pendant l'ajout d'une musique à la liste de lecture.`);
+						}
 					}
 				);
 			}
@@ -275,178 +295,6 @@ export const commands: Command[] =
 		}
 	),
 	//#endregion
-	//#region Twitch
-	new Command(
-		{
-			name: "addStreamer",
-			description: "Envoie une notification dans ce salon lorsque le streamer part en live",
-			admin: true,
-			help: ["<Nom du streamer>"],
-			run: async (client, message, parsedMessage) =>
-			{
-				if(message.channel == undefined) return; //¯\_(ツ)_/¯ Something to do with recently created channels
-
-				const query = await request<TwitchUserResponse>(
-					{
-						hostname: "api.twitch.tv",
-						path: encodeURI(`/helix/users?login=${parsedMessage[0]}`),
-						headers:
-						{
-							"client-id": config.TWITCH_ID,
-							Authorization: `Bearer ${config.TWITCH_OAUTH}`
-						}
-					}
-				);
-
-				if(query.data.length == 0) return message.channel.send(`${parsedMessage[0]} n'existe pas !`);
-
-				let streamer = query.data[0];
-
-				if(!streamers.has(streamer.login))
-				{
-					let newStreamer = new Streamer(
-						{
-							channels: message.channel as TextChannel,
-							id: streamer.id,
-							name: streamer.login,
-							displayName: streamer.display_name,
-							dbId: doc(streamerCollection, streamer.login)
-						}
-					);
-
-					streamers.set(streamer.login, newStreamer);
-
-					//Subscribe to twitch API
-					newStreamer.subscribe(true);
-
-					//Create Firestore document
-					setDoc( newStreamer.dbId,
-						{
-							channels: [message.channel.id],
-							id: streamer.id,
-							name: streamer.login,
-							displayName: streamer.display_name,
-							date: newStreamer.date
-						}
-					);
-				}
-				else
-				{
-					//Append new channel to the set
-					const currentStreamer = streamers.get(streamer.login);
-					
-					currentStreamer.channels.add(message.channel as TextChannel);
-					
-					updateDoc(currentStreamer.dbId,
-						{
-							channels: arrayUnion(message.channel.id)
-						}
-					);
-					
-					message.channel.send(`Le streamer ${streamer.display_name} à été ajouté à la liste`);
-				}
-			}
-		}
-	),
-	new Command(
-		{
-			name: "deleteStreamer",
-			description: "Supprime le ou les streamers des notifications de ce serveur",
-			admin: true,
-			help: ["<Nom1> <Nom2> <...>"],
-			run: (client, message, parsedMessage) =>
-			{
-				parsedMessage.forEach(
-					async streamerName =>
-					{
-						if(streamers.has(streamerName))
-						{
-							const streamer = streamers.get(streamerName);
-							const channels = streamer.channels;
-							
-							const channelsToRemove = Array.from(channels).filter(channel => channel.guild.id === message.guild.id);
-							
-							channelsToRemove.forEach(
-								channelToRemove =>
-								{
-									channels.delete(channelToRemove);
-									
-									message.channel.send(`Supprimé ${streamerName} du salon ${channelToRemove.name} !`);
-								}
-							);
-							
-							
-							if(channels.size == 0) //If streamer is no longer anywhere, unsubscribe from webhook and remove document
-							{
-								streamer.subscribe(false);
-								
-								deleteDoc(streamer.dbId);
-								streamers.delete(streamerName);
-							}
-							else //Else, update fauna doccument
-							{
-								const channelIds: string[] = new Array(channels.size);
-								
-								{
-									let index = 0;
-									let it = channels.values();
-									let curr = it.next();
-									
-									do
-									{
-										channelIds[index] = curr.value;
-										index++;
-										curr = it.next();
-									}
-									while(!curr.done);
-								}
-								
-								updateDoc(streamer.dbId,
-									{
-										channels: channelIds
-									}
-								);
-							}
-						}
-					}
-				);
-			}
-		}
-	),
-	new Command(
-		{
-			name: "listStreamer",
-			description: "Liste tous les streamers initialisés dans de ce serveur",
-			run: (client, message, parsedMessage) =>
-			{
-				const embed = new MessageEmbed().setTitle('Listes des streamers').setColor('#2F4F4F');
-				
-				streamers.forEach(
-					(streamer) =>
-					{
-						//Find if a channel in this server has the streamer
-						const channels = Array.from(streamer.channels.values()).filter((channel) => channel.guild.id === message.guild.id);
-						
-						if(channels.length > 0)
-						{
-							let string = "";
-
-							channels.forEach(c => string += `**# ${c.name}**, `);
-
-							embed.addField(streamer.name, string.slice(0, string.length - 2), true);
-						}
-					}
-				);
-
-				if(embed.fields.length == 0)
-				{
-					return message.channel.send(`Aucun streamer n'est vérifié dans ce serveur!`);
-				}
-
-				message.channel.send({ embeds: [embed]});
-			}
-		}
-	)
 ];
 
 //#region Utility

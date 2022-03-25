@@ -2,8 +2,9 @@
   "name": "valhyabot2.0",
   "version": "1.0.0",
   "description": "Second and hopefully working version of Valhyabot.",
-  "main": "./dist/main.js",
+  "main": "",
   "scripts": {
+	"start": "node --experimental-fetch dist/main.js",
     "postinstall": "tsc"
   },
   "repository": {
@@ -22,7 +23,6 @@
     "amqplib": "^0.8.0",
     "discord.js": "^13.1.0",
     "dotenv": "^8.6.0",
-    "express": "^4.17.1",
     "ffmpeg-static": "^4.4.0",
     "firebase": "^9.0.0",
     "libsodium-wrappers": "^0.7.9",
@@ -32,12 +32,10 @@
     "ytdl-core": "^4.8.3"
   },
   "devDependencies": {
-    "@types/amqplib": "^0.8.2",
-    "@types/express": "^4.17.13",
     "@types/node": "^14.17.5",
     "@types/uuid": "^8.3.1"
   },
   "engines": {
-	  "node": "16.x"
+    "node": "^17.5.x"
   }
 }

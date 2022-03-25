@@ -1,14 +1,11 @@
 import { Client, TextChannel, Intents } from 'discord.js';
 
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDoc, getDocs, QuerySnapshot, CollectionReference } from 'firebase/firestore/lite';
+import { getFirestore, collection, CollectionReference } from 'firebase/firestore/lite';
 
-import { connect, Connection, Channel } from 'amqplib'
-
-import { sleep, DatabaseStreamer, AMQPEvent } from "./api";
+import { sleep, DatabaseStreamer } from "./api";
 
 import { ServerQueue } from './include/song';
-import { Streamer } from './include/streamer';
 import { config, firebaseConfig } from './include/config'
 
 
@@ -17,12 +14,7 @@ export const firebaseApp = initializeApp(firebaseConfig);
 export const db = getFirestore(firebaseApp);
 export const streamerCollection = collection(db, "streamers") as CollectionReference<DatabaseStreamer>;
 
-const amqpQueueID = 'tasks';
-const amqpUrl = process.env.CLOUDAMQP_URL || "amqp://localhost";
-
 export const serverQueue: ServerQueue = new Map();
-
-export const streamers: Map<string, Streamer> = new Map();
 
 import { commands } from "./commands";
 
@@ -84,73 +76,9 @@ client.on("ready",
 	async () => 
 	{
 		console.log(`Logged in as ${client.user.username}!`);
-		
-		//Get already present streamers from database
-		const dbStreamers = await getDocs(streamerCollection);
-		
-		dbStreamers.docs.forEach(
-			(dbStreamer) =>
-			{
-				let channels: TextChannel[] = [];
-				
-				const dbStreamerData = dbStreamer.data();
-				
-				dbStreamerData.channels.forEach(async channelID => channels.push((await client.channels.fetch(channelID)) as TextChannel));
-				
-				let newStreamer = new Streamer(
-					{
-						name: dbStreamerData.name,
-						displayName: dbStreamerData.displayName,
-						channels: channels,
-						id: dbStreamerData.id,
-						dbId: dbStreamer.ref,
-						date: dbStreamerData.date
-					}
-				);
-				
-				streamers.set(dbStreamerData.name, newStreamer);
-				
-				newStreamer.renewSubscription();
-			}
-		);
 	}
 );
 
 // console.log(config);
 client.login(config.TOKEN).catch(console.log);
-
-// Listen to AMQP queue
-const open = connect(amqpUrl);
-
-open.then(
-	async conn =>
-	{
-		const ch = await conn.createChannel();
-		const ok = await ch.assertQueue(amqpQueueID, { durable: true });
-		
-		ch.consume(amqpQueueID,
-			(msg) =>
-			{
-				const event: AMQPEvent = JSON.parse( msg.content.toString() );
-				
-				switch(event.event)
-				{
-					case "online":
-						let streamer = streamers.get(event.data.name);
-						
-						streamer.channels.forEach(
-							channel =>
-							{
-								channel.send("@everyone" + ` ${streamer.displayName} est en ligne !\nhttps://www.twitch.tv/${streamer.name}`)
-							}
-						);
-						break;
-				}
-				
-				ch.ack(msg);
-			}
-		);
-	}
-);
-
 //#endregion

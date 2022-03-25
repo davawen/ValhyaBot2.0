@@ -1,2 +1,1 @@
-web: node dist/web/web.js
-worker: node dist/main.js
+worker: node --experimental-fetch dist/main.js

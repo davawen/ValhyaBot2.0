@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { Channel, Guild, VoiceChannel } from "discord.js";
-import { createAudioPlayer, AudioPlayer, VoiceConnection, joinVoiceChannel, createAudioResource, AudioPlayerStatus, AudioResource, VoiceConnectionStatus } from "@discordjs/voice"
+import { createAudioPlayer, AudioPlayer, VoiceConnection, joinVoiceChannel, createAudioResource, AudioPlayerStatus, AudioResource, VoiceConnectionStatus, DiscordGatewayAdapterCreator } from "@discordjs/voice"
 import { Server } from "http";
 import ytdl from "ytdl-core";
 
@@ -76,7 +76,7 @@ export class Queue
 			{
 				channelId: options.channel.id,
 				guildId: this.guild.id,
-				adapterCreator: this.guild.voiceAdapterCreator
+				adapterCreator: this.guild.voiceAdapterCreator as any // TODO: Not quiet sure what's the error here?? Need to check later
 			}
 		);
 		
