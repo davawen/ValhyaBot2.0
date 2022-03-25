@@ -1,7 +1,8 @@
 # Takino, yet another discord bot
-Mostly made for fun or something I guess
+Mostly made for fun or something
 
-Currently, everything is in french but I guess I can add localization features down the line.
+Only in french for now.
+
 ## Capabilities
 ### Audio playing
 - The `p` command allows you to play a youtube video while you are in a voice channel
@@ -16,13 +17,6 @@ Currently, everything is in french but I guess I can add localization features d
   - `!t skip`
 - The `list` command shows the music queue along with the durations and thumbnail of the musics
   - `!t list`
-### Twitch Warnings
-- `addStreamer` will send notifications to the channel the command was sent in when the given streamer goes online (requires admin permission)
-  - `!t addStreamer <Name>`
-- `deleteStreamer` will remove notifications from the given streamers  (requires admin permission)
-  - `!t deleteStreamer <Name 1> <Name 2> <...>`
-- `listStreamer` lists all streamer notifications set in this server
-  - `!t listStreamer`
 ### Other
 - `help` lists all commands and their arguments
   - `!t help`
@@ -30,9 +24,7 @@ Currently, everything is in french but I guess I can add localization features d
   - `!t poll <Question>`
   - `!t poll <Question> <Answer 1> <Answer 2> <...>`
 ## Building
-If for whatever reason you want to build this or contribute to this, this is a standard node/typescript project.
-
-Just clone the repo, cd into it and install the dependencies.
+To build the project, just clone the repo, cd into it and install the dependencies.
 ```
 git clone https://github.com/davawen/ValhyaBot2.0.git
 cd ValhyaBot2.0
