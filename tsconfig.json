@@ -1,12 +1,13 @@
 {
-    "compilerOptions": {
-        "allowJs": true,
-        "rootDir": "./src/",
-        "outDir": "./dist/",
-        "module": "CommonJS",
-        "target": "ES5",
-        "moduleResolution": "node",
+	"compilerOptions": {
+		"allowJs": true,
+		"rootDir": "./src/",
+		"outDir": "./dist/",
+		"module": "CommonJS",
+		"target": "ES5",
+		"moduleResolution": "node",
 		"esModuleInterop": true,
-		"allowSyntheticDefaultImports": true
-    }
+		"allowSyntheticDefaultImports": true,
+		"strict": true
+	}
 }

@@ -1,8 +1,7 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 
-export const config =
-{
+export const config = {
 	TOKEN: process.env.TOKEN,
 	TWITCH_ID: process.env.TWITCH_ID,
 	TWITCH_OAUTH: process.env.TWITCH_OAUTH,
@@ -11,8 +10,7 @@ export const config =
 	FIREBASE_KEY: process.env.FIREBASE_KEY
 };
 
-export const firebaseConfig =
-{
+export const firebaseConfig = {
 	apiKey: config.FIREBASE_KEY,
 	authDomain: "valhyabot-291020.firebaseapp.com",
 	projectId: "valhyabot-291020",

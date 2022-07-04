@@ -1,41 +1,41 @@
 {
-  "name": "valhyabot2.0",
-  "version": "1.0.0",
-  "description": "Second and hopefully working version of Valhyabot.",
-  "main": "",
-  "scripts": {
-	"start": "node --experimental-fetch dist/main.js",
-    "postinstall": "tsc"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/davawen/ValhyaBot2.0.git"
-  },
-  "author": "davawen",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/davawen/ValhyaBot2.0/issues"
-  },
-  "homepage": "https://github.com/davawen/ValhyaBot2.0#readme",
-  "dependencies": {
-    "@discordjs/opus": "^0.4.0",
-    "@discordjs/voice": "^0.6.0",
-    "amqplib": "^0.8.0",
-    "discord.js": "^13.1.0",
-    "dotenv": "^8.6.0",
-    "ffmpeg-static": "^4.4.0",
-    "firebase": "^9.0.0",
-    "libsodium-wrappers": "^0.7.9",
-    "opusscript": "0.0.8",
-    "typescript": "^4.3.5",
-    "uuid": "^8.3.2",
-    "ytdl-core": "^4.8.3"
-  },
-  "devDependencies": {
-    "@types/node": "^14.17.5",
-    "@types/uuid": "^8.3.1"
-  },
-  "engines": {
-    "node": "^17.5.x"
-  }
+	"name": "valhyabot2.0",
+	"version": "1.0.0",
+	"description": "Second and hopefully working version of Valhyabot.",
+	"main": "",
+	"scripts": {
+		"start": "node --experimental-fetch dist/main.js",
+		"postinstall": "tsc"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/davawen/ValhyaBot2.0.git"
+	},
+	"author": "davawen",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/davawen/ValhyaBot2.0/issues"
+	},
+	"homepage": "https://github.com/davawen/ValhyaBot2.0#readme",
+	"dependencies": {
+		"@discordjs/opus": "^0.8.0",
+		"@discordjs/voice": "^0.10.0",
+		"amqplib": "^0.10.0",
+		"discord.js": "^13.8.1",
+		"dotenv": "^16.0.1",
+		"ffmpeg-static": "^5.0.2",
+		"firebase": "^9.8.4",
+		"libsodium-wrappers": "^0.7.10",
+		"opusscript": "^0.0.8",
+		"play-dl": "^1.9.5",
+		"typescript": "^4.7.4"
+	},
+	"devDependencies": {
+		"@types/node": "^18.0.1",
+		"prettier": "2.7.1",
+		"yarn-upgrade-all": "^0.7.1"
+	},
+	"engines": {
+		"node": "^17.5.x"
+	}
 }

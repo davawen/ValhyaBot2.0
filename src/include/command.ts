@@ -1,9 +1,8 @@
-import { Client, Message } from 'discord.js';
+import { Client, Message } from "discord.js";
 
 export type CommandArgument = "commands" | "serverQueue" | "streamers";
 
-interface CommandConstructorOptions
-{
+interface CommandConstructorOptions {
 	/**Function called when the command is invoked*/
 	run: (client: Client, message: Message, parsedMessage: string[]) => void;
 	/**Name of the command, as will be typed by the user*/
@@ -14,18 +13,16 @@ interface CommandConstructorOptions
 	help?: string[];
 	/**Wether the command requires admin permissions to be run, false by default*/
 	admin?: boolean;
-};
+}
 
-export class Command
-{
+export class Command {
 	run: (client: Client, message: Message, parsedMessage: string[]) => void;
 	name: string;
 	description: string;
 	help: string[];
 	admin: boolean;
-	
-	constructor(options: CommandConstructorOptions)
-	{
+
+	constructor(options: CommandConstructorOptions) {
 		this.run = options.run;
 		this.name = options.name;
 		this.description = options.description;
