@@ -36,6 +36,6 @@
 		"yarn-upgrade-all": "^0.7.1"
 	},
 	"engines": {
-		"node": "^17.5.x"
+		"node": ">=18.0.0"
 	}
 }

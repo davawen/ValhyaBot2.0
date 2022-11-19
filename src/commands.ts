@@ -149,7 +149,7 @@ export const commands: Command[] = [
 				if (message.embeds.length > 0) message.suppressEmbeds(); //Remove youtube embeds there might be
 			} catch (err) {}
 
-			let urls: string[] = []; //Add support for playlists
+			let urls: string[] = [];
 
 			// If not a valid youtube URL, treat it as a search
 			const validated = play.yt_validate(parsedMessage[0]);
@@ -160,7 +160,7 @@ export const commands: Command[] = [
 
 				try {
 					const video: YoutubeSearchResponse = await fetch(
-						`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q=${encodeURIComponent(
+						`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=${encodeURIComponent(
 							videoQuery
 						)}&key=${config.GOOGLE_ID}`
 					).then(res => res.json());
